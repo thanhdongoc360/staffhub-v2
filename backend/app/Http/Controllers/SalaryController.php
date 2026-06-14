@@ -3,50 +3,36 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Salary;
-use Illuminate\Support\Facades\Auth;
+use App\Services\SalaryService;
 
 class SalaryController extends Controller
 {
+    public function __construct(
+        private SalaryService $salaryService
+    ) {}
+
     public function mySalaries(Request $request)
     {
-        $query = Auth::user()
-            ->employee
-            ->salaries()
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc');
-
-        if ($request->month) {
-            $query->where('month', $request->month);
-        }
-
-        if ($request->year) {
-            $query->where('year', $request->year);
-        }
-
-        return response()->json($query->get());
+        return response()->json(   
+            $this->salaryService->getMySalaries(
+                $request->user(),   
+                $request->only(['month', 'year'])
+            )
+        );
     }
 
     public function adminIndex(Request $request)
     {
-        $query = Salary::with('employee.user')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc');
-
-        if ($request->month) {
-            $query->where('month', $request->month);
-        }
-
-        if ($request->year) {
-            $query->where('year', $request->year);
-        }
-
-        return response()->json($query->get());
+        return response()->json(
+            $this->salaryService->getAllSalaries(
+                $request->only(['month', 'year', 'page', 'per_page'])
+            )
+        );
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2000',
@@ -55,46 +41,25 @@ class SalaryController extends Controller
             'note' => 'nullable|string'
         ]);
 
-        $salary = Salary::create([
-            'employee_id' => $request->employee_id,
-            'month' => $request->month,
-            'year' => $request->year,
-            'base_salary' => $request->base_salary,
-            'bonus' => $request->bonus ?? 0,
-            'total' => $request->base_salary + ($request->bonus ?? 0),
-            'note' => $request->note ?? ''
-        ]);
-
-        return response()->json($salary->load('employee.user'));
+        return response()->json(
+            $this->salaryService->createSalary($data)
+        );
     }
 
     public function managementIndex(Request $request)
     {
-        $user = $request->user();
+        $salaries = $this->salaryService
+            ->getDepartmentSalaries(
+                $request->user(),
+                $request->only(['month', 'year'])
+            );
 
-        if (!$user->employee) {
+        if (!$salaries) {
             return response()->json([
                 'message' => 'Không tìm thấy thông tin nhân viên'
             ], 404);
         }
 
-        $department = $user->employee->department;
-
-        $query = Salary::with('employee.user')
-            ->whereHas('employee', function ($q) use ($department) {
-                $q->where('department', $department);
-            })
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc');
-
-        if ($request->month) {
-            $query->where('month', $request->month);
-        }
-
-        if ($request->year) {
-            $query->where('year', $request->year);
-        }
-
-        return response()->json($query->get());
+        return response()->json($salaries);
     }
 }

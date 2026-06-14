@@ -1,7 +1,5 @@
 <template>
     <div>
-        <TheHeader />
-
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
@@ -34,7 +32,7 @@
                         </button>
                     </div>
 
-                    <div class="mt-3 filter-panel">
+                    <div class="mt-3">
                         <div class="d-flex flex-column flex-sm-row flex-wrap gap-3 align-items-stretch align-items-sm-end">
                             <div class="filter-item filter-item-sm">
                                 <label class="form-label fw-semibold mb-1">Tháng</label>
@@ -95,7 +93,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarEmployee from '../../components/SidebarEmployee.vue';
 import { ref, onMounted } from 'vue';
 import http from '../../services/http';
@@ -106,22 +103,26 @@ const list = ref([])
 const month = ref(new Date().getMonth() + 1)
 const year = ref(new Date().getFullYear())
 
+// Hàm để xác định class CSS dựa trên trạng thái
 const statusClass = (status) => {
     const value = (status || '').toLowerCase()
 
     if (value.includes('present') || value.includes('đi làm')) return 'status-present'
     if (value.includes('late') || value.includes('muộn')) return 'status-late'
     if (value.includes('half') || value.includes('nửa')) return 'status-half-day'
+    if (value.includes('absent') || value.includes('vắng')) return 'status-absent'
 
     return 'status-default'
 }
 
+// Hàm để hiển thị văn bản dựa trên trạng thái
 const statusText = (status) => {
     const value = (status || '').toLowerCase()
 
     if (value.includes('present') || value.includes('đi làm')) return 'Đi làm'
     if (value.includes('late') || value.includes('muộn')) return 'Đi muộn'
     if (value.includes('half') || value.includes('nửa')) return 'Nửa ngày'
+    if (value.includes('absent') || value.includes('vắng')) return 'Vắng mặt'
 
     return status || 'Không xác định'
 }
@@ -130,12 +131,12 @@ const checkIn = async () => {
     try {
         await http.post('/attendance/check-in')
         alert('Check-in thành công')
-        fetchHistory()
+        fetchHistory()   
     } catch (e) {
         alert(e.response.data.message)
     }
 }
-
+   
 const checkOut = async () => {
     try {
         await http.post('/attendance/check-out')
@@ -163,7 +164,9 @@ onMounted(fetchHistory)
 
 <style scoped>
 .filter-item {
+    /* Bắt đầu từ 240px, có thể co lại hoặc giãn ra để vừa container */
     flex: 1 1 240px;
+    /* cho phép item co nhỏ hơn nội dung bên trong */
     min-width: 0;
 }
 
@@ -187,6 +190,7 @@ onMounted(fetchHistory)
 
 .status-half-day {
     color: #0d6efd;
+    /* font-weight dùng để điều chỉnh độ đậm của chữ (font) */
     font-weight: 600;
 }
 
@@ -195,11 +199,12 @@ onMounted(fetchHistory)
     font-weight: 600;
 }
 
+/* CSS bên trong chỉ chạy khi màn hình <= 576px */
 @media (max-width: 576px) {
     .filter-item,
     .filter-item-sm,
     .filter-item-xs {
-        flex-basis: 100%;
+        flex-basis: 100%; 
     }
 }
 </style>

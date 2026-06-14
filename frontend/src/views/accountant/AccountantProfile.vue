@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- Header -->
-    <TheHeader />
-
     <div class="container-fluid mt-3">
       <!-- Nút mở sidebar cho mobile -->
       <a-button @click="showSidebar = true" class="d-lg-none mb-3">
@@ -26,7 +23,6 @@
 
           <!-- Thông tin cơ bản -->
           <div class="card p-3 p-lg-4 mb-4">
-            <h2 class="text-secondary mb-3">Thông tin cơ bản</h2>
 
             <a-form layout="vertical" layout-lg="horizontal" :label-col="{ span: 24 }" :wrapper-col="{ span: 24 }">
               <a-form-item label="Họ và tên">
@@ -44,7 +40,6 @@
               <a-form-item label="Vị trí">
                 <a-input v-model:value="profile.position" disabled />
               </a-form-item>
-
               <a-form-item label="Phòng ban">
                 <a-input v-model:value="profile.department" disabled />
               </a-form-item>
@@ -88,12 +83,11 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
-import SidebarAccountant from '../../components/SidebarAccountant.vue';
-import { ref, onMounted } from 'vue';
-import http from '../../services/http';
+import { ref, onMounted } from 'vue'
+import SidebarAccountant from '../../components/SidebarAccountant.vue'
+import http from '../../services/http'
 
-const showSidebar = ref(false);
+const showSidebar = ref(false)
 
 const profile = ref({
   name: '',
@@ -103,64 +97,64 @@ const profile = ref({
   department: '',
   phone: '',
   status: ''
-});
+})
 
 const passwordForm = ref({
   current_password: '',
   new_password: '',
   confirm_password: ''
-});
+})
 
 const fetchProfile = async () => {
   try {
-    const res = await http.get('/accountant/profile');
-    profile.value = res.data.data;
+    const res = await http.get('/accountant/profile')
+    profile.value = res.data.data
   } catch (error) {
-    console.log('Error fetching profile: ', error.response);
+    console.log('Error fetching profile: ', error?.response || error)
   }
-};  
+}
 
 onMounted(() => {
-  fetchProfile();
-});
+  fetchProfile()
+})
 
 const updateProfile = async () => {
   try {
     await http.put('/accountant/profile', {
       email: profile.value.email,
       phone: profile.value.phone
-    });
-    alert('Cập nhật thành công');
+    })
+    alert('Cập nhật thành công')
   } catch (error) {
-    alert('Cập nhật thất bại');
+    alert('Cập nhật thất bại')
   }
-};
+}
 
 const handleChangePassword = async () => {
   try {
     if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
-      alert('Mật khẩu xác nhận không khớp');
-      return;
+      alert('Mật khẩu xác nhận không khớp')
+      return
     }
 
     const res = await http.put('/accountant/change-password', {
       current_password: passwordForm.value.current_password,
       new_password: passwordForm.value.new_password
-    });
+    })
 
-    alert(res.data.message);
+    alert(res.data.message)
 
     passwordForm.value = {
       current_password: '',
       new_password: '',
       confirm_password: ''
-    };
+    }
   } catch (error) {
-    if (error.response) {
-      alert(error.response.data.message);
+    if (error?.response) {
+      alert(error.response.data.message)
     }
   }
-};
+}
 </script>
 
 <style scoped>

@@ -1,8 +1,7 @@
 <template>
     <div>
-        <TheHeader />
-        <div class="container-fluid">
-            <a-button @click="showSidebar = true" class="d-lg-none mb-2">
+        <div class="container-fluid mt-3">
+            <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
             </a-button>
 
@@ -70,7 +69,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarEmployee from '../../components/SidebarEmployee.vue';
 
 import { ref, onMounted, computed } from 'vue'

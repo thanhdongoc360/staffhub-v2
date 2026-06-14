@@ -1,6 +1,5 @@
 <template>
     <div>
-        <TheHeader />
 
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
@@ -12,17 +11,17 @@
                 <SidebarAccountant />
             </a-drawer>
 
-            <div class="row">
+            <div class="row">    
                 <div class="d-none d-lg-block col-lg-3">
                     <SidebarAccountant />
                 </div>
 
                 <div class="col-12 col-lg-9">
                     <div
-                        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
+                        class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center mt-3 gap-2 w-100">
                         <h1 class="mb-0">Danh sách bảng lương</h1>
 
-                        <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+                        <div class="d-flex flex-column flex-sm-row gap-2 ms-lg-auto">
                             <button class="btn btn-primary d-block d-sm-inline-block" @click="exportExcel">
                                 Xuất Excel
                             </button>
@@ -221,7 +220,6 @@
 
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue'
 import SidebarAccountant from '../../components/SidebarAccountant.vue'
 import { ref, onMounted, computed } from 'vue'
 import http from '../../services/http'
@@ -352,22 +350,28 @@ const exportExcel = async () => {
                 year: year.value
             },
             {
-                responseType: 'blob'
+                responseType: 'blob' // server trả về file, nên set responseType là blob để nhận dạng đúng
             }
         )
 
-        const url = window.URL.createObjectURL(new Blob([res.data]))
+        // tạo URL tạm thời cho file vừa nhận được để có thể tải về
+        const url = window.URL.createObjectURL(new Blob([res.data])) 
+        // thẻ a ảo để tải file về vì brower chỉ cho phép tải file qua thẻ a có thuộc tính download
         const link = document.createElement('a')
 
+        // trỏ tới file excel vừa được tạo
         link.href = url
+        // đặt tên file khi tải về
         link.setAttribute(
             'download',
             `salary_${month.value}_${year.value}.xlsx`
         )
 
+        // Thêm vào DOM để đảm bảo click hoạt động 
         document.body.appendChild(link)
+        // Tự động click để download
         link.click()
-
+        // Xóa link sau khi tải xong
         link.remove()
     } catch (error) {
         alert('Xuất file thất bại')

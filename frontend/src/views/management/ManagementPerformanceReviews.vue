@@ -1,7 +1,5 @@
 <template>
     <div>
-        <TheHeader />
-
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
@@ -105,7 +103,7 @@
             </div>
         </div>
 
-        <a-modal v-model:open="showModal" title="Chi tiết đánh giá" width="800px" @cancel="showModal = false"
+        <a-modal :open="showModal" @update:open="showModal = $event" title="Chi tiết đánh giá" width="800px" @cancel="showModal = false"
             :footer="null" @ok="saveReview">
             <div v-if="detail">
                 <h3>{{ detail.employee.name }}</h3>
@@ -116,23 +114,23 @@
 
                 <a-form layout="vertical">
                     <a-form-item label="KPI Score">
-                        <a-input-number v-model:value="detail.review.kpi_score" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.kpi_score" @update:value="(value) => detail.review.kpi_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Discipline Score">
-                        <a-input-number v-model:value="detail.review.discipline_score" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.discipline_score" @update:value="(value) => detail.review.discipline_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Collaboration Score">
-                        <a-input-number v-model:value="detail.review.collaboration_score" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.collaboration_score" @update:value="(value) => detail.review.collaboration_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Growth Score">
-                        <a-input-number v-model:value="detail.review.growth_score" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.growth_score" @update:value="(value) => detail.review.growth_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Reviewer Comment">
-                        <a-textarea v-model:value="detail.review.reviewer_comment" />
+                        <a-textarea :value="detail.review.reviewer_comment" @update:value="(value) => detail.review.reviewer_comment = value" />
                     </a-form-item>
                 </a-form>
 
@@ -163,7 +161,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import TheHeader from '../../components/TheHeader.vue'
 import SidebarManagement from '../../components/SidebarManagement.vue'
 import http from '../../services/http'
 
@@ -189,7 +186,9 @@ const fetchData = async () => {
                 search: search.value
             }
         })
-        list.value = response.data
+
+        const payload = response.data ?? {}
+        list.value = payload.data ?? []
     } catch (error) {
         console.log('Fetch performance error: ', error)
     }

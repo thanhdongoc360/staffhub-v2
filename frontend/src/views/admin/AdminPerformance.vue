@@ -1,6 +1,5 @@
 <template>
     <div>
-        <TheHeader />
         <div class="container-fluid">
             <a-button @click="showSidebar = true" class="d-lg-none mb-2">
                 <i class="fa-solid fa-bars"></i>
@@ -25,24 +24,23 @@
                                 <div class="filter-item filter-item-search">
                                     <label class="form-label fw-semibold mb-1">Tìm kiếm</label>
                                     <input v-model="search" placeholder="Tên / mã NV" class="form-control w-100"
-                                        @keyup.enter="fetchData" />
+                                        @keyup.enter="handleSearch" />
                                 </div>
 
                                 <div class="filter-item filter-item-sm">
                                     <label class="form-label fw-semibold mb-1">Tháng</label>
-                                    <select v-model="month" class="form-select w-100" @change="fetchData">
+                                    <select v-model.number="month" class="form-select w-100">
                                         <option v-for="m in 12" :key="m" :value="m">Tháng {{ m }}</option>
                                     </select>
                                 </div>
 
                                 <div class="filter-item filter-item-sm">
                                     <label class="form-label fw-semibold mb-1">Năm</label>
-                                    <input v-model="year" type="number" class="form-control w-100"
-                                        @change="fetchData" />
+                                    <input v-model.number="year" type="number" class="form-control w-100" />
                                 </div>
 
                                 <div class="filter-item filter-item-xs d-flex align-items-end">
-                                    <button class="btn btn-primary w-100" @click="fetchData">Tìm kiếm</button>
+                                    <button class="btn btn-primary w-100" @click="handleSearch">Tìm kiếm</button>
                                 </div>
                             </div>
                         </div>
@@ -95,13 +93,23 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <div class="d-flex justify-content-center mt-4">
+                            <a-pagination
+                                :current="currentPage"
+                                :total="totalItems"
+                                :page-size="perPage"
+                                @change="onPageChange"
+                                show-less-items
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- MODAL -->
-        <a-modal v-model:open="showModal" title="Chi tiết đánh giá" width="600px" :footer="null">
+        <a-modal :open="showModal" @update:open="showModal = $event" title="Chi tiết đánh giá" width="600px" :footer="null">
             <div v-if="detail">
                 <h3>{{ detail.employee.name }}</h3>
                 <p>Mã NV: {{ detail.employee.code }}</p>
@@ -127,12 +135,14 @@
 
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import http from "../../services/http";
 
 const list = ref([])
+const totalItems = ref(0)
+const currentPage = ref(1)
+const perPage = 10
 const search = ref('')
 const month = ref(new Date().getMonth() + 1)
 const year = ref(new Date().getFullYear())
@@ -140,17 +150,30 @@ const year = ref(new Date().getFullYear())
 const showModal = ref(false)
 const detail = ref(null)
 
-const fetchData = async () => {
+const fetchData = async (page = 1) => {
     const res = await http.get('/admin/performance', {
         params: {
             month: month.value,
             year: year.value,
-            search: search.value
+            search: search.value,
+            page,
+            per_page: perPage
         }
     })
 
-    list.value = res.data
+    list.value = res.data.data ?? []
+    totalItems.value = res.data.total ?? 0
+    currentPage.value = res.data.current_page ?? page
 }
+
+const handleSearch = () => {
+    currentPage.value = 1
+    fetchData(1)
+}
+
+watch([month, year], () => {
+    handleSearch()
+})
 
 import { computed } from 'vue'
 
@@ -194,6 +217,11 @@ const openDetail = async (item) => {
     showModal.value = true
 }
 
+const onPageChange = (page) => {
+    currentPage.value = page
+    fetchData(page)
+}
+
 const statusText = (status) => {
     switch (status) {
         case 'draft': return 'Bản nháp'
@@ -203,7 +231,7 @@ const statusText = (status) => {
     }
 }
 
-onMounted(fetchData)
+onMounted(() => fetchData(1))
 </script>
 
 <style scoped>

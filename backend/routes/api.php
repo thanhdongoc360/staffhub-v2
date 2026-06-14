@@ -40,12 +40,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
-    Route::middleware('role:employee')->group(function () {
+    Route::middleware('role:employee')->group(function () {  
         Route::post('/leaves', [LeaveController::class, 'store']);
         Route::get('/leaves', [LeaveController::class, 'index']);
-
-        Route::get('/my-salaries', [SalaryController::class, 'mySalaries']);
-
+   
+        Route::get('/my-salaries', [SalaryController::class, 'mySalaries']);    
+  
         Route::get('/employee/profile', [EmployeeController::class, 'profile']);
         Route::put('/employee/profile', [EmployeeController::class, 'updateProfile']);
         Route::put('/employee/change-password', [EmployeeController::class, 'changePassword']);
@@ -53,13 +53,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
         Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
         Route::get('/attendance/my', [AttendanceController::class, 'myAttendance']);
-
+  
         Route::get('schedule/my', [ScheduleController::class, 'mySchedule']);
     });
-
+   
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/dashboard', [UserController::class, 'dashboard']);
-        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index']);    
 
         Route::get('/employees', [UserController::class, 'employeeList']);
         Route::post('/employees', [UserController::class, 'store']);
@@ -124,12 +124,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/attendance', [AttendanceController::class, 'managementIndex']);
         Route::put('/attendance/{id}', [AttendanceController::class, 'update']);
 
-        Route::get('/shifts', [ScheduleController::class, 'getShifts']);
+        Route::get('/shifts', [ScheduleController::class, 'getShifts']);     
 
         Route::post('/schedule/assign', [ScheduleController::class, 'assignEmployees']);
         Route::post('/schedule/create-week', [ScheduleController::class, 'createWeekSchedule']);
 
         Route::get('/schedule', [ScheduleController::class, 'managementView']);
+        Route::get('/schedule/current', [ScheduleController::class, 'currentWeekSchedule']);
     });
 
     Route::middleware('role:accountant')->prefix('accountant')->group(function () {

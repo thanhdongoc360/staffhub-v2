@@ -1,6 +1,5 @@
 <template>
     <div>
-        <TheHeader />
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
@@ -63,16 +62,16 @@
             </div>
         </div>
 
-        <a-modal v-model:open="isLeaveModalOpen" ok-text="Lưu" cancel-text="Đóng" @ok="createLeave"
+        <a-modal :open="isLeaveModalOpen" @update:open="(value) => isLeaveModalOpen = value" ok-text="Lưu" cancel-text="Đóng" @ok="createLeave"
             title="Tạo đơn nghỉ phép">
             <a-form layout="vertical">
                 <a-form-item label="Khoảng ngày">
-                    <a-range-picker v-model:value="dateRange" :placeholder="['Ngày bắt đầu', 'Ngày kết thúc']"
+                    <a-range-picker :value="dateRange" @update:value="(value) => dateRange = value" :placeholder="['Ngày bắt đầu', 'Ngày kết thúc']"
                         class="w-100" />
                 </a-form-item>
 
                 <a-form-item label="" name="status">
-                    <a-select v-model:value="typeLeave" placeholder="Chọn loại nghỉ">
+                    <a-select :value="typeLeave" @update:value="(value) => typeLeave = value" placeholder="Chọn loại nghỉ">
                         <a-select-option value="Nghỉ phép năm">Nghỉ phép năm</a-select-option>
                         <a-select-option value="Nghỉ ốm">Nghỉ ốm</a-select-option>
                         <a-select-option value="Nghỉ không lương">Nghỉ không lương</a-select-option>
@@ -80,7 +79,7 @@
                 </a-form-item>
 
                 <a-form-item label="Lý do">
-                    <a-textarea v-model:value="reason" :rows="4" />
+                    <a-textarea :value="reason" @update:value="(value) => reason = value" :rows="4" />
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -88,7 +87,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarAccountant from '../../components/SidebarAccountant.vue';
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '../../stores/user';
@@ -121,7 +119,8 @@ const fetchLeaves = async () => {
     try {
         const res = await http.get('/accountant/leaves')
 
-        leaves.value = res.data.data
+        const payload = res.data.data ?? {}
+        leaves.value = payload.data ?? []
     }
     catch(error) {
         console.log(error)
@@ -136,8 +135,13 @@ const createLeave = async () => {
     const startDate = dateRange.value[0]?.format("YYYY-MM-DD")
     const endDate = dateRange.value[1]?.format("YYYY-MM-DD")
 
+    if (!startDate || !endDate || !typeLeave.value || !reason.value.trim()) {
+        alert('Vui lòng chọn đủ ngày, loại nghỉ và lý do')
+        return
+    }
+
     try {
-        const res = await http.post('/accountant/leaves', {
+        await http.post('/accountant/leaves', {
             start_date: startDate,
             end_date: endDate,
             type: typeLeave.value,
@@ -153,6 +157,7 @@ const createLeave = async () => {
         reason.value = ''
     } catch (error) {
         console.log(error)
+        alert(error?.response?.data?.message || 'Tạo đơn nghỉ phép thất bại')
     }
 }
 

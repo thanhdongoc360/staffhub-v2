@@ -125,27 +125,27 @@ const routes = [
   {
     path: "/management/salary",
     component: () => import("../views/management/ManagementSalary.vue"),
-    meta: { role: "management" },
+    meta: { requiresAuth: true, role: "management" },
   },
   {
     path: "/management/notifications",
     component: () => import("../views/management/ManagementNotifications.vue"),
-    meta: { role: "management" },
+    meta: { requiresAuth: true, role: "management" },
   },
   {
     path: "/management/performance_reviews",
     component: () => import("../views/management/ManagementPerformanceReviews.vue"),
-    meta: { role: "management" },
+    meta: { requiresAuth: true, role: "management" },
   },
   {
     path: "/management/attendance",
     component: () => import("../views/management/ManagementAttendance.vue"),
-    meta: { role: "management" },
+    meta: { requiresAuth: true, role: "management" },
   },
   {
     path: "/management/schedule",
     component: () => import("../views/management/ManagementSchedule.vue"),
-    meta: { role: "management" },
+    meta: { requiresAuth: true, role: "management" },
   },
 
 
@@ -154,27 +154,27 @@ const routes = [
   {
     path: "/accountant/dashboard",
     component: () => import("../views/accountant/AccountantDashboard.vue"),
-    meta: { role: "accountant" },
+    meta: { requiresAuth: true, role: "accountant" },
   },
   {
     path: "/accountant/salaries",
     component: () => import("../views/accountant/AccountantSalariesList.vue"),
-    meta: { role: "accountant" },
+    meta: { requiresAuth: true, role: "accountant" },
   },
   {
     path: "/accountant/notifications",
     component: () => import("../views/accountant/AccountantNotifications.vue"),
-    meta: { role: "accountant" },
+    meta: { requiresAuth: true, role: "accountant" },
   },
   {
     path: "/accountant/profile",
     component: () => import("../views/accountant/AccountantProfile.vue"),
-    meta: { role: "accountant" },
+    meta: { requiresAuth: true, role: "accountant" },
   },
   {
     path: "/accountant/leaves",
     component: () => import("../views/accountant/AccountantLeaves.vue"),
-    meta: { role: "accountant" },
+    meta: { requiresAuth: true, role: "accountant" },
   },
 ];
 

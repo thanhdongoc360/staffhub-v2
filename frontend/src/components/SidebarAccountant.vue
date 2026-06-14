@@ -2,7 +2,7 @@
     <div class="d-flex">
 
         <!-- Sidebar Accountant -->
-        <div class="bg-light p-3 vh-100" style="width: 250px;">
+        <div class="bg-light p-3 vh-100" style="width: 280px;">
 
             <ul class="nav nav-pills flex-column mb-auto">
 
@@ -68,6 +68,12 @@
     color: #f8f9fa !important;
     border-radius: 6px;
     transition: 0.2s;
+}
+
+.nav-link {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .router-link-exact-active {

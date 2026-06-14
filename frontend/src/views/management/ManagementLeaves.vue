@@ -1,7 +1,5 @@
 <template>
   <div>
-    <TheHeader />
-
     <div class="container-fluid mt-3">
       <a-button @click="showSidebar = true" class="d-lg-none mb-3">
         <i class="fa-solid fa-bars"></i>
@@ -97,7 +95,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import http from '../../services/http'
-import TheHeader from '../../components/TheHeader.vue'
 import SidebarManagement from '../../components/SidebarManagement.vue'
 
 const leaves = ref([])
@@ -106,7 +103,8 @@ const showSidebar = ref(false)
 const fetchLeaves = async () => {
   try {
     const res = await http.get('/management/leaves')
-    leaves.value = res.data.data || []
+    const payload = res.data.data ?? {}
+    leaves.value = payload.data ?? []
   } catch (error) {
     console.log(error)
   }

@@ -1,6 +1,5 @@
 <template>
     <div>
-        <TheHeader />
         <div class="container-fluid">
             <a-button @click="showSidebar = true" class="d-lg-none mb-2">
                 <i class="fa-solid fa-bars"></i>
@@ -61,8 +60,22 @@
                                     <td>{{ salary.total }}</td>
                                     <td class="d-none d-lg-table-cell">{{ salary.note }}</td>
                                 </tr>
+
+                                <tr v-if="salaries.length === 0">
+                                    <td colspan="6" class="text-center text-muted">Chưa có bảng lương nào</td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="d-flex justify-content-center mt-4">
+                        <a-pagination
+                            :current="currentPage"
+                            :total="totalSalaries"
+                            :page-size="perPage"
+                            @change="onPageChange"
+                            show-less-items
+                        />
                     </div>
                 </div>
             </div>
@@ -85,7 +98,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 
 import { ref, onMounted } from 'vue'
@@ -93,6 +105,9 @@ import http from "../../services/http";
 
 const salaries = ref([])
 const showSidebar = ref(false)
+const currentPage = ref(1)
+const totalSalaries = ref(0)
+const perPage = 10
 
 const selectedMonth = ref(null)
 const selectedYear = ref(null)
@@ -116,11 +131,32 @@ const fetchEmployees = async () => {
     employees.value = res.data
 }
 
-const fetchAllSalaries = async () => {
-    try {
-        const res = await http.get('/admin/salaries')
+const buildSalaryParams = (page = 1) => {
+    const params = {
+        page,
+        per_page: perPage
+    }
 
-        salaries.value = res.data
+    if (selectedMonth.value) {
+        params.month = selectedMonth.value
+    }
+
+    if (selectedYear.value) {
+        params.year = selectedYear.value
+    }
+
+    return params
+}
+
+const fetchAllSalaries = async (page = 1) => {
+    try {
+        const res = await http.get('/admin/salaries', {
+            params: buildSalaryParams(page)
+        })
+
+        salaries.value = res.data.data ?? []
+        totalSalaries.value = res.data.total ?? 0
+        currentPage.value = res.data.current_page ?? page
     } catch (error) {
         console.log(error)
     }
@@ -128,13 +164,13 @@ const fetchAllSalaries = async () => {
 
 const handleSubmit = async () => {
     try {
-        const res = await http.post(
+        await http.post(
             '/admin/salaries',
             form.value)
 
-        salaries.value.unshift(res.data)
-
         showModal.value = false
+        currentPage.value = 1
+        await fetchAllSalaries(1)
     } catch (error) {
         console.log(error.response.data)
     }
@@ -147,12 +183,16 @@ const searchSalary = async () => {
             return
         }
 
-        const res = await http.get(`/admin/salaries?month=${selectedMonth.value}&year=${selectedYear.value}`)
-
-        salaries.value = res.data
+        currentPage.value = 1
+        await fetchAllSalaries(1)
     } catch (error) {
         console.log(error)
     }
+}
+
+const onPageChange = (page) => {
+    currentPage.value = page
+    fetchAllSalaries(page)
 }
 
 onMounted(() => {

@@ -3,163 +3,166 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\LeaveRequest;
-use App\Models\Notification;
+use App\Services\LeaveService;
 
 class LeaveController extends Controller
 {
+    public function __construct(
+        private LeaveService $leaveService
+    ) {}
+
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'type' => 'required|string',
             'reason' => 'required|string'
         ]);
 
-        $user = $request->user();
+        $result = $this->leaveService
+            ->createLeave($request->user(), $data);
 
-        if (!$user || !$user->employee) {
+        if (!$result['success']) {
             return response()->json([
-                'message' => 'Không tìm thấy thông tin nhân viên'
-            ], 422);
+                'message' => $result['message']
+            ], $result['code']);
         }
-
-        $leave = LeaveRequest::create([
-            'employee_id' => $user->employee->id,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'type' => $request->type,
-            'reason' => $request->reason,
-            'status' => 'Chờ duyệt'
-        ]);
 
         return response()->json([
             'message' => 'Tạo đơn nghỉ phép thành công',
-            'data' => $leave
+            'data' => $result['data']
         ]);
     }
 
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        if (!$user || !$user->employee) {
+        $leaves = $this->leaveService  
+            ->getEmployeeLeaves($request->user());
+  
+        if (!$leaves) {
             return response()->json([
                 'message' => 'Không tìm thấy nhân viên'
             ], 404);
         }
-
-        $leaves = LeaveRequest::where('employee_id', $user->employee->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
+  
         return response()->json([
             'data' => $leaves
         ]);
     }
 
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
-        $leaves = LeaveRequest::with('employee.user')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $leaves = $this->leaveService->listAllLeaves($request->all());
+
+        if ($leaves instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            return response()->json([
+                'data' => $leaves
+            ]);
+        }
 
         return response()->json([
-            'data' => $leaves
+            'data' => [
+                'data' => $leaves,
+                'total' => count($leaves),
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 10
+            ]
         ]);
     }
 
-
-    public function managementIndex(Request $request)
+    public function approve(Request $request, int $id)
     {
-        $user = $request->user();
+        $result = $this->leaveService
+            ->approveLeave($request->user(), $id);
 
-        if (!$user->employee) {
+        if (!$result['success']) {
             return response()->json([
-                'message' => 'Không tìm thấy thông tin nhân viên'
-            ], 404);
+                'message' => $result['message']
+            ], $result['code']);
         }
-
-        $department = $user->employee->department;
-
-        $leaves = LeaveRequest::with('employee.user')
-            ->whereHas('employee', function ($query) use ($department) {
-                $query->where('department', $department);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json([
-            'data' => $leaves
-        ]);
-    }
-
-    public function managementApprove(Request $request, $id)
-    {
-        $user = $request->user();
-
-        if (!$user->employee) {
-            return response()->json([
-                'message' => 'Không tìm thấy thông tin nhân viên'
-            ], 404);
-        }
-
-        $department = $user->employee->department;
-
-        $leave = LeaveRequest::where('id', $id)
-            ->whereHas('employee', function ($query) use ($department) {
-                $query->where('department', $department);
-            })
-            ->first();
-
-        if (!$leave) {
-            return response()->json([
-                'message' => 'Bạn không có quyền xử lý đơn này'
-            ], 403);
-        }
-
-        if ($leave->status !== 'Chờ duyệt') {
-            return response()->json([
-                'message' => 'Đơn này đã được xử lý'
-            ], 400);
-        }
-
-        $leave->update([
-            'status' => 'Đã duyệt'
-        ]);
 
         return response()->json([
             'message' => 'Duyệt đơn thành công'
         ]);
     }
 
-    public function managementReject(Request $request, $id)
+    public function reject(Request $request, int $id)
     {
-        $user = $request->user();
+        $result = $this->leaveService
+            ->rejectLeave($request->user(), $id);
 
-        if (!$user->employee) {
-            return response()->json(['message' => 'Không tìm thấy nhân viên'], 404);
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $department = $user->employee->department;
+        return response()->json([
+            'message' => 'Từ chối thành công'
+        ]);
+    }
 
-        $leave = LeaveRequest::where('id', $id)
-            ->whereHas('employee', function ($query) use ($department) {
-                $query->where('department', $department);
-            })
-            ->first();
+    public function managementIndex(Request $request)
+    {
+        $leaves = $this->leaveService->listDepartmentLeaves(
+            $request->user(),
+            $request->all()
+        );
 
-        if (!$leave) {
-            return response()->json(['message' => 'Bạn không có quyền'], 403);
+        if (!$leaves) {
+            return response()->json([
+                'message' => 'Không tìm thấy thông tin nhân viên'
+            ], 404);
         }
 
-        if ($leave->status !== 'Chờ duyệt') {
-            return response()->json(['message' => 'Đơn đã xử lý'], 400);
+        if ($leaves instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            return response()->json([
+                'data' => $leaves
+            ]);
         }
 
-        $leave->update(['status' => 'Từ chối']);
+        return response()->json([
+            'data' => [
+                'data' => $leaves,
+                'total' => count($leaves),
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 10
+            ]
+        ]);
+    }
 
-        return response()->json(['message' => 'Từ chối thành công']);
+    public function managementApprove(Request $request, int $id)
+    {
+        $result = $this->leaveService
+            ->approveLeave($request->user(), $id);
+
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
+        }
+
+        return response()->json([
+            'message' => 'Duyệt đơn thành công'
+        ]);
+    }
+
+    public function managementReject(Request $request, int $id)
+    {
+        $result = $this->leaveService
+            ->rejectLeave($request->user(), $id);
+
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
+        }
+
+        return response()->json([
+            'message' => 'Từ chối thành công'
+        ]);
     }
 }

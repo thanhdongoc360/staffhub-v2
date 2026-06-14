@@ -1,6 +1,5 @@
 <template>
     <div>
-        <TheHeader />
         <div class="container-fluid">
             <a-button @click="showSidebar = true" class="d-lg-none mb-2">
                 <i class="fa-solid fa-bars"></i>
@@ -28,7 +27,43 @@
                         </div>
                     </div>
 
-                    <div class="table-responsive mt-4">
+                        <div class="mt-3 filter-panel">
+                            <div class="d-flex flex-column flex-md-row flex-wrap gap-3">
+                                <div class="filter-item filter-item-search">
+                                    <label class="form-label fw-semibold mb-1">Tìm kiếm</label>
+                                    <a-input placeholder="Tên, email, mã NV..." v-model:value="search" @pressEnter="handleSearch"
+                                        allow-clear class="w-100" />
+                                </div>
+
+                                <div class="filter-item filter-item-sm">
+                                    <label class="form-label fw-semibold mb-1">Trạng thái</label>
+                                    <a-select v-model:value="status" @change="handleSearch" allow-clear class="w-100">
+                                        <a-select-option value="">Tất cả</a-select-option>
+                                        <a-select-option value="active">Đang làm</a-select-option>
+                                        <a-select-option value="inactive">Nghỉ việc</a-select-option>
+                                    </a-select>
+                                </div>
+
+                                <div class="filter-item filter-item-sm">
+                                    <label class="form-label fw-semibold mb-1">Sắp xếp theo</label>
+                                    <a-select v-model:value="sortBy" @change="handleSearch" class="w-100">
+                                        <a-select-option value="id">ID</a-select-option>
+                                        <a-select-option value="name">Họ tên</a-select-option>
+                                        <a-select-option value="position">Vị trí</a-select-option>
+                                    </a-select>
+                                </div>
+
+                                <div class="filter-item filter-item-xs">
+                                    <label class="form-label fw-semibold mb-1">Thứ tự</label>
+                                    <a-select v-model:value="sortOrder" @change="handleSearch" class="w-100">
+                                        <a-select-option value="asc">Tăng dần</a-select-option>
+                                        <a-select-option value="desc">Giảm dần</a-select-option>
+                                    </a-select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mt-4">
                         <table class="table">
                             <thead>
                                 <tr>
@@ -64,6 +99,16 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="d-flex justify-content-center mt-4">
+                        <a-pagination 
+                            v-model:current="currentPage" 
+                            :total="totalUsers" 
+                            :page-size="perPage"
+                            @change="onPageChange"
+                            show-less-items
+                        />
                     </div>
                 </div>
             </div>
@@ -142,7 +187,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 
 import { ref, onMounted, reactive } from 'vue';
@@ -150,9 +194,16 @@ import http from "../../services/http";
 
 const users = ref([])
 const totalUsers = ref(0)
+const currentPage = ref(1)
+const perPage = 10
 const showSidebar = ref(false)
 
+const search = ref('')
+const status = ref('')
+const sortBy = ref('id')
+const sortOrder = ref('desc')
 
+     
 const open = ref(false);
 
 const showModal = () => {
@@ -160,10 +211,17 @@ const showModal = () => {
 };
 
 const fetchUsers = async () => {
-
-
     try {
-        const response = await http.get('/admin/users')
+        const response = await http.get('/admin/users', {
+            params: {
+                page: currentPage.value,
+                per_page: perPage,
+                search: search.value,
+                status: status.value,
+                sort_by: sortBy.value,
+                sort_order: sortOrder.value
+            }
+        })
 
         totalUsers.value = response.data.total;
         users.value = response.data.users;
@@ -171,6 +229,16 @@ const fetchUsers = async () => {
     catch (error) {
         console.log(error);
     }
+}
+
+const handleSearch = () => {
+    currentPage.value = 1
+    fetchUsers()
+}
+
+const onPageChange = (page) => {
+    currentPage.value = page;
+    fetchUsers();
 }
 
 onMounted(() => {
@@ -199,6 +267,8 @@ const resetForm = () => {
     Object.assign(addUser, initialAddUser);
     formRef.value?.clearValidate();
 };
+
+// rules = danh sách điều kiện bắt buộc người dùng phải nhập đúng trước khi submit form. 
 const rules = {
     name: [
         { required: true, message: 'Nhập họ tên', trigger: 'blur' }, 
@@ -223,13 +293,14 @@ const rules = {
 };
 
 const handleOk = () => {
-    formRef.value
+    formRef.value  
         .validate()
         .then(async () => {
             try {
                 await http.post('/admin/employees', addUser);
 
-                await fetchUsers();
+currentPage.value = 1;
+        await fetchUsers();
                 open.value = false;
                 resetForm();
 
@@ -277,6 +348,7 @@ const updateUser = async () => {
         })
 
         isEditModalOpen.value = false
+        currentPage.value = 1;
         await fetchUsers()
     } catch (error) {
         console.log(error)
@@ -295,6 +367,7 @@ const deleteUser = async () => {
         await http.delete(`/admin/users/${selectedUser.value.id}`)
 
         isDeleteModalOpen.value = false
+        currentPage.value = 1;
         await fetchUsers()
     } catch (error) {
         console.log(error)
@@ -313,3 +386,31 @@ const statusClass = (status) => {
     return 'text-muted'
 }
 </script>
+
+<style scoped>
+.filter-item {
+    flex: 1 1 250px;
+    min-width: 0;
+}
+
+.filter-item-search {
+    flex: 0 1 520px;
+}
+
+.filter-item-sm {
+    flex: 0 1 180px;
+}
+
+.filter-item-xs {
+    flex: 0 1 150px;
+}
+
+@media (max-width: 576px) {
+    .filter-item,
+    .filter-item-search,
+    .filter-item-sm,
+    .filter-item-xs {
+        flex-basis: 100%;
+    }
+}
+</style>

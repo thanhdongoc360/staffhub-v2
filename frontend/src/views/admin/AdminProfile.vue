@@ -1,6 +1,5 @@
 <template>
     <div>
-        <TheHeader />
         <div class="container-fluid">
             <a-button @click="showSidebar = true" class="d-lg-none mb-2">
                 <i class="fa-solid fa-bars"></i>
@@ -72,7 +71,6 @@
 
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 
 import { ref, onMounted } from 'vue'

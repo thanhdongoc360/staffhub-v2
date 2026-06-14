@@ -1,7 +1,5 @@
 <template>
     <div>
-        <TheHeader />
-
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
@@ -87,7 +85,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import http from '../../services/http'
-import TheHeader from '../../components/TheHeader.vue'
 import SidebarManagement from '../../components/SidebarManagement.vue'
 
 const notifications = ref([])

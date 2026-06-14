@@ -4,36 +4,27 @@ namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Services\AccountantDashboardService;
 
 class AccountantDashboardController extends Controller
 {
+    public function __construct(
+        private AccountantDashboardService $dashboardService
+    ) {}
+
     public function index(Request $request)
     {
-        $month = $request->month;
-        $year = $request->year;
-
-        $query = DB::table('salaries')
-            ->where('month', $month)
-            ->where('year', $year);
-
-        return response()->json([
-            'total_payroll' => $query->sum('total'),
-            'total_employees' => $query->count(),
-            'calculated' => (clone $query)->where('status', 'calculated')->count(),
-            'not_calculated' => (clone $query)->where('status', 'draft')->count(),
-
-            'warnings' => [
-                'missing_base_salary' => (clone $query)->whereNull('base_salary')->count(),
-                'negative_salary' => (clone $query)->where('total', '<', 0)->count(),
-            ],
-
-            'status' => [
-                'draft' => (clone $query)->where('status', 'draft')->count(),
-                'calculated' => (clone $query)->where('status', 'calculated')->count(),
-                'approved' => (clone $query)->where('status', 'approved')->count(),
-                'published' => (clone $query)->where('status', 'published')->count(),
-            ]
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2000'
         ]);
+
+        return response()->json(
+            $this->dashboardService
+                ->getDashboard(
+                    $request->month,
+                    $request->year
+                )
+        );
     }
 }

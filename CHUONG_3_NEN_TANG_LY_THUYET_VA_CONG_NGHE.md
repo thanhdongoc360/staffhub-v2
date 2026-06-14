@@ -7,7 +7,7 @@ Hệ thống StaffHub được xây dựng với kiến trúc client-server truy
 Mô hình kiến trúc sử dụng các công nghệ hiện đại để cân bằng giữa độ ổn định, khả năng bảo trì và tốc độ phát triển, phù hợp với quy mô của một đồ án tốt nghiệp và nhu cầu thực tế của hệ thống quản lý nhân sự.
 
 ## 3.2. Kiến trúc tổng quát
-Hệ thống được thiết kế theo kiến trúc ba lớp (Three-tier Architecture).  Ở tầng Presentation (giao diện), ứng dụng sử dụng Vue 3 và Vite chạy trên trình duyệt của người dùng, thực hiện các thao tác hiển thị và gửi các yêu cầu HTTP/HTTPS tới backend.  Ở tầng Application (business logic), backend được xây dựng bằng Laravel 9 chạy trên PHP 8.2 để xử lý logic nghiệp vụ, kiểm tra xác thực và phân quyền, cũng như tương tác với cơ sở dữ liệu thông qua các Model Eloquent.  Ở tầng Data, MySQL 8.0 đảm nhiệm vai trò lưu trữ toàn bộ dữ liệu hệ thống.
+Hệ thống được thiết kế theo kiến trúc ba lớp (Three-tier Architecture), trong đó tầng Application được tổ chức theo hướng Controller - Service - Model để tách biệt rõ ràng trách nhiệm xử lý. Ở tầng Presentation (giao diện), ứng dụng sử dụng Vue 3 và Vite chạy trên trình duyệt của người dùng, thực hiện các thao tác hiển thị và gửi các yêu cầu HTTP/HTTPS tới backend. Ở tầng Application (business logic), backend được xây dựng bằng Laravel 9 chạy trên PHP 8.2, trong đó Controller tiếp nhận yêu cầu từ phía client, Service xử lý nghiệp vụ, và các Model Eloquent đảm nhiệm tương tác với cơ sở dữ liệu. Ở tầng Data, MySQL 8.0 đảm nhiệm vai trò lưu trữ toàn bộ dữ liệu hệ thống.
 
 Giao tiếp giữa frontend và backend được thực hiện qua RESTful API sử dụng định dạng JSON và được bảo vệ bằng token do Laravel Sanctum phát hành. Toàn bộ hệ thống được đóng gói trong các container và điều phối bằng Docker Compose, giúp đảm bảo tính nhất quán khi triển khai giữa các môi trường (local, staging, production).
 
@@ -96,6 +96,12 @@ Cấu hình Docker Compose StaffHub gồm bốn service chính: app service (PHP
 Nginx được sử dụng để nhận HTTP request từ trình duyệt (port 8080), forward request API tới PHP-FPM backend, serve static files (JS, CSS) từ public folder. Nginx nhẹ hơn Apache, hỗ trợ reverse proxy tốt, hỗ trợ URL rewrite để route toàn bộ request đến index.php (Frontend routing), với cấu hình đơn giản và hiệu năng cao.
 
 So với các lựa chọn khác, Apache nặng hơn với cấu hình phức tạp (.htaccess). Caddy modern hơn nhưng có ít support hơn Nginx.
+
+### 3.6.3. GitHub Actions (CI/CD)
+
+GitHub Actions được sử dụng để triển khai quy trình CI/CD tự động cho dự án StaffHub, bao gồm kiểm tra backend Laravel bằng PHPUnit, chạy migration cơ sở dữ liệu, và build giao diện frontend Vue 3. Các workflow được kích hoạt khi push hoặc tạo pull request, giúp phát hiện lỗi sớm trước khi hợp nhất mã nguồn.
+
+Việc tích hợp GitHub Actions giúp chuẩn hóa quá trình kiểm thử giữa các môi trường phát triển, giảm thao tác thủ công và tăng độ tin cậy khi triển khai. Kết hợp với Docker Compose, hệ thống vừa có môi trường chạy nhất quán, vừa có cơ chế kiểm tra tự động để đảm bảo chất lượng mã nguồn trước khi release.
 
 ## 3.7. Công nghệ Hỗ trợ
 

@@ -2,138 +2,123 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EmployeeScheduleAssignment;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
-use App\Models\WorkShift;
-use App\Models\WorkSchedule;
+use App\Services\ScheduleService;
 
 class ScheduleController extends Controller
 {
+    public function __construct(
+        private ScheduleService $scheduleService
+    ) {}
+
     public function mySchedule(Request $request)
-    {
-        $user = auth()->user();
-        $employee = $user->employee;
+    {  
+        $result = $this->scheduleService
+            ->getMySchedule(
+                auth()->user(),
+                $request->type ?? 'week'
+            );
 
-        if (!$employee) {
-            return response()->json(['message' => 'No employee'], 400);
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $type = $request->type ?? 'week';
-
-        $query = EmployeeScheduleAssignment::with('shift')
-            ->where('employee_id', $employee->id);
-
-        if ($type === 'today') {
-            $query->whereDate('work_date', Carbon::today());
-        }
-
-        if ($type === 'week') {
-            $query->whereBetween('work_date', [
-                Carbon::now()->startOfWeek(),
-                Carbon::now()->endOfWeek()
-            ]);
-        }
-
-        if ($type === 'month') {
-            $query->whereMonth('work_date', Carbon::now()->month)
-                ->whereYear('work_date', Carbon::now()->year);
-        }
-
-        return response()->json(
-            $query->orderBy('work_date')->get()
-        );
+        return response()->json($result['data']);
     }
 
     public function getShifts()
     {
         return response()->json(
-            WorkShift::orderBy('id', 'desc')->get()
+            $this->scheduleService->getShifts()
         );
     }
 
     public function storeShift(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required',
             'start_time' => 'required',
             'end_time' => 'required'
         ]);
 
-        $shift = WorkShift::create($request->all());
-
-        return response()->json($shift);
+        return response()->json(
+            $this->scheduleService->createShift($data)
+        );
     }
 
-    public function updateShift(Request $request, $id)
-    {
-        $shift = WorkShift::findOrFail($id);
-
-        $shift->update($request->all());
-
-        return response()->json($shift);
+    public function updateShift(
+        Request $request,
+        int $id
+    ) {
+        return response()->json(
+            $this->scheduleService
+                ->updateShift($id, $request->all())
+        );
     }
 
-    public function deleteShift($id)
+    public function deleteShift(int $id)
     {
-        WorkShift::findOrFail($id)->delete();
+        $this->scheduleService->deleteShift($id);
 
-        return response()->json(['message' => 'Deleted']);
+        return response()->json([
+            'message' => 'Deleted'
+        ]);
     }
 
     public function assignEmployees(Request $request)
     {
-        $scheduleId = $request->schedule_id;
-        $shiftId = $request->shift_id;
-        $employeeIds = $request->employee_ids;
-        $dates = $request->dates;
+        $data = $request->validate([
+            'schedule_id' => 'required|integer|exists:work_schedules,id',
+            'shift_id' => 'required|integer|exists:work_shifts,id',
+            'employee_ids' => 'required|array|min:1',
+            'employee_ids.*' => 'integer|exists:employees,id',
+            'dates' => 'required|array|min:1',
+            'dates.*' => 'date'
+        ]);
 
-        foreach ($employeeIds as $employeeId) {
-            foreach ($dates as $date) {
+        $result = $this->scheduleService
+            ->assignEmployees($data);
 
-                //  tránh assign trùng
-                $exists = EmployeeScheduleAssignment::where([
-                    'employee_id' => $employeeId,
-                    'work_date' => $date
-                ])->exists();
-
-                if (!$exists) {
-                    EmployeeScheduleAssignment::create([
-                        'employee_id' => $employeeId,
-                        'work_schedule_id' => $scheduleId,
-                        'work_shift_id' => $shiftId,
-                        'work_date' => $date,
-                    ]);
-                }
-            }
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        return response()->json(['message' => 'Assigned']);
+        return response()->json([
+            'message' => 'Assigned'
+        ]);
     }
 
     public function managementView(Request $request)
     {
-        $user = auth()->user();
-        $department = $user->employee->department;
-
-        return EmployeeScheduleAssignment::with(['shift', 'employee.user'])
-            ->whereHas('employee', function ($q) use ($department) {
-                $q->where('department', $department);
-            })
-            ->orderBy('work_date')
-            ->get();
+        return response()->json(
+            $this->scheduleService
+                ->getDepartmentSchedules(
+                    auth()->user()
+                )
+        );
     }
 
     public function createWeekSchedule(Request $request)
     {
-        $start = Carbon::parse($request->start_date);
+        $request->validate([
+            'start_date' => 'required|date'
+        ]);   
 
-        $schedule = WorkSchedule::create([
-            'start_date' => $start,
-            'end_date' => $start->copy()->addDays(6),
-            'status' => 'draft'
-        ]);
+        $result = $this->scheduleService->createWeekSchedule(
+            $request->start_date
+        );
 
-        return $schedule;
+        return response()->json($result);
+    }
+
+    public function currentWeekSchedule()
+    {
+        return response()->json(
+            $this->scheduleService->getLatestWeekSchedule()
+        );
     }
 }

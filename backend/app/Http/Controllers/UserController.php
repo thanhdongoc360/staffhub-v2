@@ -4,29 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Employee;
-use App\Models\LeaveRequest;
-use App\Models\Role;
+use App\Services\UserService;
+use App\Services\DashboardService;
 
-class UserController extends Controller
+class UserController extends Controller   
 {
-    public function index()
-    {
-        $users = User::with('employee')
-            ->where('name', '!=', 'admin')
-            ->get();
+    public function __construct(
+        private UserService $userService,
+        private DashboardService $dashboardService
+    ) {}    
 
-        return response()->json([
-            'total' => $users->count(),
-            'users' => $users
-        ]);
-    }
-
-    public function store(Request $request)
+    public function store(Request $request) 
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users,email',
             'position' => 'required',
@@ -35,50 +26,18 @@ class UserController extends Controller
             'status' => 'required'
         ]);
 
-        DB::beginTransaction();
+        $this->userService->createEmployee($data);
 
-        try {
-            $role = Role::where('name', 'employee')->first();
-
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role_id' => $role->id
-            ]);
-
-            Employee::create([
-                'user_id' => $user->id,
-                'employee_code' => 'EMP' . time(),
-                'position' => $request->position,
-                'department' => $request->department,
-                'status' => $request->status
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Tạo nhân viên thành công'
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        return response()->json([
+            'message' => 'Tạo nhân viên thành công'
+        ], 201);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) 
     {
         $user = User::findOrFail($id);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->save();
-
-        if ($user->employee) {
-            $user->employee->position = $request->position;
-            $user->employee->department = $request->department;
-            $user->employee->save();
-        }
+        $this->userService->updateUser($user, $request->all());
 
         return response()->json([
             'message' => 'User update successfully',
@@ -90,49 +49,43 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $user->employee()?->delete();
-
-        $user->notifications()?->delete();
-
-        $user->delete();
+        $this->userService->deleteUser($user);
 
         return response()->json([
             'message' => 'Đã xóa tài khoản thành công'
         ]);
     }
 
-    public function user(Request $request)
-    {
-        return $request->user()->load('employee');
-    }
-
-    public function employeeList()
-    {
-        $employee = Employee::with('user')->get();
-
-        return response()->json($employee);
-    }
-
     public function dashboard()
     {
-        $totalUsers = User::whereHas('roleRelation', function ($q) {
-            $q->where('name', 'employee');
-        })->count();
+        return response()->json(
+            $this->dashboardService->getDashboard()
+        );
+    }
 
-        $recentUsers = User::with(['employee', 'roleRelation'])
-            ->whereHas('roleRelation', function ($q) {
-                $q->where('name', 'employee');
-            })
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $pendingLeaves = LeaveRequest::where('status', 'Chờ duyệt')->count();
+    public function index(Request $request)
+    {
+        $users = $this->userService->listUsers($request->all());
+    
+        if ($users instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            return response()->json([
+                'users' => $users->items(),
+                'total' => $users->total(),
+            ]);
+        }
 
         return response()->json([
-            'total' => $totalUsers,
-            'users' => $recentUsers,
-            'pending_leaves' => $pendingLeaves
+            'users' => $users,
+            'total' => is_countable($users) ? count($users) : 0,
         ]);
     }
+
+    public function employeeList(Request $request)
+    {
+        $employees = $this->userService->listEmployees($request->all());
+        return response()->json($employees);
+    }
 }
+
+
+

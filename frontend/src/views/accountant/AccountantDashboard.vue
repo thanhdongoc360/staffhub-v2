@@ -1,7 +1,5 @@
 <template>
     <div>
-        <TheHeader />
-
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
@@ -23,7 +21,7 @@
                         <h1 class="mb-0">Dashboard kế toán</h1>
                     </div>
 
-                    <div class="mt-3">
+                    <div class="mt-3">   
                         <div class="row g-2 align-items-stretch align-items-md-center">
 
                             <div class="col-12 col-sm-6 col-md-auto">
@@ -51,31 +49,29 @@
                     </div>
 
                     <div class="row mt-4 g-3">
-                            <div class="col-12 col-md-6">
-                                <div class="card h-100 dashboard-card">
-                                    <div class="card-body d-flex align-items-center gap-3">
-                                        <i class="fa-solid fa-money-bill-wave fs-1 text-primary"></i>
+                        <div class="col-12 col-md-6">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <i class="fa-solid fa-money-bill-wave fs-1 text-primary"></i>
 
-                                        <div>
-                                            <p class="mb-1 text-muted">Tổng quỹ lương</p>
-                                            <h3 class="mb-0">{{ data.total_payroll }}</h3>
-                                        </div>
+                                <div>
+                                    <p class="mb-1 text-muted">Tổng quỹ lương</p>
+                                    <h3 class="mb-0">{{ data.total_payroll }}</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="card h-100 dashboard-card">
+                                <div class="card-body d-flex align-items-center gap-3">
+                                    <i class="fa-solid fa-users fs-1 text-success"></i>
+
+                                    <div>
+                                        <p class="mb-1 text-muted">Tổng nhân viên</p>
+                                        <h3 class="mb-0">{{ data.total_employees }}</h3>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="col-12 col-md-6">
-                                <div class="card h-100 dashboard-card">
-                                    <div class="card-body d-flex align-items-center gap-3">
-                                        <i class="fa-solid fa-users fs-1 text-success"></i>
-
-                                        <div>
-                                            <p class="mb-1 text-muted">Tổng nhân viên</p>
-                                            <h3 class="mb-0">{{ data.total_employees }}</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        </div>
                     </div>
 
                     <!-- Status breakdown -->
@@ -150,11 +146,9 @@
     </div>
 </template>
 
-
 <script setup>
-import TheHeader from '../../components/TheHeader.vue'
-import SidebarAccountant from '../../components/SidebarAccountant.vue'
 import { ref, onMounted } from 'vue'
+import SidebarAccountant from '../../components/SidebarAccountant.vue'
 import http from '../../services/http'
 
 const showSidebar = ref(false)
@@ -165,7 +159,6 @@ const year = ref(2026)
 const data = ref({
     total_payroll: 0,
     total_employees: 0,
-    calculated: 0,
     not_calculated: 0,
     warnings: {},
     status: {}

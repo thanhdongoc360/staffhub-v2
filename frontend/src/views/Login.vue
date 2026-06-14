@@ -5,7 +5,7 @@
       <form @submit.prevent="handleLogin">
         <div class="mb-3">
           <label for="inputEmail" class="form-label">Tên tài khoản</label>
-          <input v-model="email" type="email" class="form-control" id="inputEmail" aria-describedby="emailHelp">
+          <input v-model="email" type="email" class="form-control" id="inputEmail">
           <div id="emailHelp" class="form-text"></div>
         </div>
         <div class="mb-3">
@@ -20,7 +20,7 @@
         <div v-if="errorMessage" class="alert alert-danger mt-3">
           {{ errorMessage }}
         </div>
-      </form>
+      </form>    
     </div>
   </div>
 </template>
@@ -40,7 +40,7 @@ const userStore = useUserStore()
 const errorMessage = ref('')
 
 async function handleLogin() {
-  try {
+  try {  
     const response = await http.post('/login', {
       email: email.value,
       password: password.value

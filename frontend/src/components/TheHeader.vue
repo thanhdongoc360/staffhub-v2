@@ -8,7 +8,7 @@
             </span>
 
             <button class="btn btn-outline-light" @click="handleLogout">
-                Logout
+                Đăng xuất
             </button>
         </div>
     </nav>

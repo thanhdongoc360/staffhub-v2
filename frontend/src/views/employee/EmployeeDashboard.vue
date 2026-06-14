@@ -1,8 +1,5 @@
 <template>
     <div>
-        <!-- Header -->
-        <TheHeader />
-
         <div class="container-fluid mt-3">
             <!-- Nút mở sidebar cho mobile -->
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
@@ -131,7 +128,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarEmployee from '../../components/SidebarEmployee.vue';
 import { ref, onMounted } from 'vue';
 import http from "../../services/http";
@@ -148,7 +144,10 @@ const schedules = ref([])
 const fetchLeaveHistory = async () => {
     try {
         const res = await http.get('/leaves');
-        leaveData.value = res.data.data.slice(0, 5); // chỉ lấy 5 đơn gần nhất
+        const payload = res.data.data
+        const items = Array.isArray(payload) ? payload : (payload?.data ?? [])
+
+        leaveData.value = items.slice(0, 5); // chỉ lấy 5 đơn gần nhất
     } catch (error) {
         console.log('Không lấy được lịch sử nghỉ phép:', error);
     }
@@ -172,12 +171,10 @@ const statusClass = (status) => {
     return 'status-default'
 }
 
-
-
 const formatStatus = (status) => {
     const value = (status || '').toLowerCase()
 
-    if (value === 'active') return 'Đang làm việc'
+    if (value === 'active') return 'Đang làm việc'    
     if (value === 'inactive') return 'Ngừng hoạt động'
 
     return status // fallback nếu có trạng thái khác
@@ -217,7 +214,7 @@ onMounted(async () => {
 
         if (!token) return
 
-        // 👇 đảm bảo axios có token
+        // đảm bảo axios có token
         http.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
         if (!userStore.user) {

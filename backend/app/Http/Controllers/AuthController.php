@@ -2,43 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+
+use App\Services\AuthService;
 
 class AuthController extends Controller
 {
-    public function login(Request $request) {
-        $request->validate([
+    public function __construct(
+        private AuthService $authService
+    ) {}   
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required'
         ]);
 
-        if(!Auth::attempt($request->only('email', 'password'))) {
+        $result = $this->authService
+            ->login($credentials);
+
+        if (!$result['success']) {
+
             return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $user = Auth::user();
-        $user->load('employee');
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login success',
-            'role' => $user->role,
-            'user' => $user,
-            'token' => $token
-        ]);
+        return response()->json(
+            $result['data']
+        );
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $this->authService
+            ->logout(
+                $request->user()
+            );
 
         return response()->json([
-            'message' => 'Logged out successfully'
+            'message' =>
+                'Logged out successfully'
         ]);
     }
 }

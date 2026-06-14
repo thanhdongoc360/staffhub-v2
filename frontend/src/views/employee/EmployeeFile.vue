@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- Header -->
-    <TheHeader />
-
     <div class="container-fluid mt-3">
       <!-- Nút mở sidebar cho mobile -->
       <a-button @click="showSidebar = true" class="d-lg-none mb-3">
@@ -26,9 +23,8 @@
 
           <!-- Thông tin cơ bản -->
           <div class="card p-3 p-lg-4 mb-4">
-            <h2 class="text-secondary mb-3">Thông tin cơ bản</h2>
 
-            <a-form layout="vertical" layout-lg="horizontal" :label-col="{ span: 24 }" :wrapper-col="{ span: 24 }">
+            <a-form layout="vertical" :label-col="{ span: 24 }" :wrapper-col="{ span: 24 }">
               <a-form-item label="Họ và tên">
                 <a-input v-model:value="profile.name" disabled />
               </a-form-item>
@@ -42,9 +38,9 @@
               </a-form-item>
 
               <a-form-item label="Vị trí">
-                <a-input v-model:value="profile.position" disabled />
+                <!-- disabled: chỉ được xem, không được chỉnh sửa -->
+                <a-input v-model:value="profile.position" disabled /> 
               </a-form-item>
-
               <a-form-item label="Phòng ban">
                 <a-input v-model:value="profile.department" disabled />
               </a-form-item>
@@ -85,12 +81,11 @@
       </div>
     </div>
   </div>
-</template>
+ </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
-import SidebarEmployee from '../../components/SidebarEmployee.vue';
 import { ref, onMounted } from 'vue';
+import SidebarEmployee from '../../components/SidebarEmployee.vue';
 import http from '../../services/http';
 
 const showSidebar = ref(false);

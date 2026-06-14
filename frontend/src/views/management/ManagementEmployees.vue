@@ -1,7 +1,5 @@
 <template>
     <div>
-        <TheHeader />
-
         <div class="container-fluid mt-3">
             <a-button @click="showSidebar = true" class="d-lg-none mb-3">
                 <i class="fa-solid fa-bars"></i>
@@ -11,15 +9,13 @@
                 class="d-lg-none">
                 <SidebarManagement />
             </a-drawer>
-        </div>
+            <div class="row">
+                <div class="d-none d-lg-block col-lg-3">
+                    <SidebarManagement />
+                </div>
 
-        <div class="row">
-            <div class="d-none d-lg-block col-lg-3">
-                <SidebarManagement />
-            </div>
-
-            <div class="col-12 col-lg-9">
-                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
+                <div class="col-12 col-lg-9">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
                     <h1 class="mb-0">
                         Nhân viên phòng ban:
                         <span class="text-primary">{{ department }}</span>
@@ -36,13 +32,13 @@
                     <div class="d-flex flex-column flex-md-row flex-wrap gap-3">
                         <div class="filter-item filter-item-search">
                             <label class="form-label fw-semibold mb-1">Tìm kiếm</label>
-                            <a-input placeholder="Tên, email, mã NV..." v-model:value="search" @pressEnter="handleSearch"
+                            <a-input placeholder="Tên, email, mã NV..." :value="search" @update:value="(value) => search = value" @pressEnter="handleSearch"
                                 allow-clear class="w-100" />
                         </div>
 
                         <div class="filter-item filter-item-sm">
                             <label class="form-label fw-semibold mb-1">Trạng thái</label>
-                            <a-select v-model:value="status" @change="handleSearch" allow-clear class="w-100">
+                            <a-select :value="status" @update:value="(value) => status = value" @change="handleSearch" allow-clear class="w-100">
                                 <a-select-option value="">Tất cả</a-select-option>
                                 <a-select-option value="active">Đang làm</a-select-option>
                                 <a-select-option value="inactive">Nghỉ việc</a-select-option>
@@ -53,7 +49,7 @@
                     <div class="d-flex flex-column flex-md-row flex-wrap gap-3 mt-3">
                         <div class="filter-item filter-item-sm">
                             <label class="form-label fw-semibold mb-1">Sắp xếp theo</label>
-                            <a-select v-model:value="sortBy" @change="handleSearch" class="w-100">
+                            <a-select :value="sortBy" @update:value="(value) => sortBy = value" @change="handleSearch" class="w-100">
                                 <a-select-option value="id">ID</a-select-option>
                                 <a-select-option value="name">Họ tên</a-select-option>
                                 <a-select-option value="position">Vị trí</a-select-option>
@@ -62,7 +58,7 @@
 
                         <div class="filter-item filter-item-xs">
                             <label class="form-label fw-semibold mb-1">Thứ tự</label>
-                            <a-select v-model:value="sortOrder" @change="handleSearch" class="w-100">
+                            <a-select :value="sortOrder" @update:value="(value) => sortOrder = value" @change="handleSearch" class="w-100">
                                 <a-select-option value="asc">Tăng dần</a-select-option>
                                 <a-select-option value="desc">Giảm dần</a-select-option>
                             </a-select>
@@ -112,8 +108,9 @@
                 </div>
             </div>
         </div>
+        </div>
 
-        <a-modal v-model:open="isViewModalOpen" ok-text="Đóng"
+        <a-modal :open="isViewModalOpen" @update:open="(value) => isViewModalOpen = value" ok-text="Đóng"
             :cancel-button-props="{ style: { display: 'none' } }"
             @ok="isViewModalOpen = false" @cancel="isViewModalOpen = false" title="Chi tiết nhân viên">
             <p><b>Họ và tên:</b> {{ selectedEmployee?.user?.name }}</p>
@@ -134,7 +131,6 @@
 </template>
 
 <script setup>
-import TheHeader from '../../components/TheHeader.vue';
 import SidebarManagement from '../../components/SidebarManagement.vue';
 
 import { ref, onMounted } from 'vue';

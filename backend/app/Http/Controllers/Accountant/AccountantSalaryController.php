@@ -4,240 +4,171 @@ namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Salary;
-use Illuminate\Support\Facades\DB;
+use App\Services\AccountantSalaryService;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SalaryExport;
 
 class AccountantSalaryController extends Controller
 {
+    public function __construct(
+        private AccountantSalaryService $salaryService
+    ) {}
+
     public function index(Request $request)
     {
-        $query = DB::table('salaries')
-            ->join('employees', 'salaries.employee_id', '=', 'employees.id')
-            ->join('users', 'employees.user_id', '=', 'users.id')
-            ->select(
-                'salaries.*',
-                'users.name as user_name'
-            );
-
-        if ($request->month) {
-            $query->where('salaries.month', $request->month);
-        }
-
-        if ($request->year) {
-            $query->where('salaries.year', $request->year);
-        }
-
-        if ($request->status) {
-            $query->where('salaries.status', $request->status);
-        }
-
-        if ($request->search) {
-            $query->where('users.name', 'like', '%' . $request->search . '%');
-        }
-
         return response()->json(
-            $query->orderBy('salaries.id', 'desc')->paginate(10)
+            $this->salaryService
+                ->getSalaries(
+                    $request->only([
+                        'month',
+                        'year',
+                        'status',
+                        'search'
+                    ])
+                )
         );
     }
 
     public function calculate(Request $request)
     {
-        Salary::where('month', $request->month)
-            ->where('year', $request->year)
-            ->where('status', 'draft')
-            ->get()
-            ->each(function ($salary) {
-                $salary->total = $salary->base_salary + $salary->bonus - $salary->tax;
-                $salary->status = 'calculated';
-                $salary->save();
-            });
+        $this->salaryService->calculate(
+            $request->month,
+            $request->year
+        );
 
-        return response()->json(['message' => 'Calculated']);
+        return response()->json([
+            'message' => 'Calculated'
+        ]);
     }
 
     public function approve(Request $request)
     {
-        Salary::where('month', $request->month)
-            ->where('year', $request->year)
-            ->where('status', 'calculated')
-            ->update(['status' => 'approved']);
+        $this->salaryService->approve(
+            $request->month,
+            $request->year
+        );
 
-        return response()->json(['message' => 'Approved']);
+        return response()->json([
+            'message' => 'Approved'
+        ]);
     }
 
     public function publish(Request $request)
     {
-        Salary::where('month', $request->month)
-            ->where('year', $request->year)
-            ->where('status', 'approved')
-            ->update(['status' => 'published']);
+        $this->salaryService->publish(
+            $request->month,
+            $request->year
+        );
 
-        return response()->json(['message' => 'Published']);
+        return response()->json([
+            'message' => 'Published'
+        ]);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
-        $salary = Salary::with('employee.user')->findOrFail($id);
-
-        return response()->json($salary);
+        return response()->json(
+            $this->salaryService->show($id)
+        );
     }
 
-    public function update(Request $request, $id)
+    public function create(Request $request)
     {
-        $salary = Salary::findOrFail($id);
+        $data = $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2000'
+        ]);
 
-        //  không cho sửa nếu published
-        if ($salary->status === 'published') {
+        $result = $this->salaryService
+            ->createSalaryTable(
+                $data['month'],
+                $data['year']
+            );
+
+        if (!$result['success']) {
             return response()->json([
-                'message' => 'Cannot edit published salary'
-            ], 403);
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $request->validate([
+        return response()->json([
+            'message' => 'Created'
+        ]);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $data = $request->validate([
             'base_salary' => 'required|numeric|min:0',
             'bonus' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
             'note' => 'nullable|string'
         ]);
 
-        $salary->base_salary = $request->base_salary;
-        $salary->bonus = $request->bonus ?? 0;
-        $salary->tax = $request->tax ?? 0;
-        $salary->note = $request->note;
+        $result = $this->salaryService->updateSalary($id, $data);
 
-        //  backend luôn là source of truth
-        $salary->total = $salary->base_salary + $salary->bonus - $salary->tax;
-
-        $salary->save();
-
-        return response()->json($salary);
-    }
-
-    public function calculateOne($id)
-    {
-        $salary = Salary::findOrFail($id);
-
-        if ($salary->status !== 'draft') {
-            return response()->json(['message' => 'Chỉ tính khi là draft'], 400);
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $salary->total = $salary->base_salary + $salary->bonus - $salary->tax;
-        $salary->status = 'calculated';
-        $salary->save();
-
-        return response()->json($salary);
+        return response()->json($result['data']);
     }
 
-    public function approveOne($id)
+    public function calculateOne(int $id)
     {
-        $salary = Salary::findOrFail($id);
+        $result = $this->salaryService->calculateOne($id);
 
-        if ($salary->status !== 'calculated') {
-            return response()->json(['message' => 'Phải tính trước'], 400);
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $salary->status = 'approved';
-        $salary->save();
-
-        return response()->json($salary);
+        return response()->json($result['data']);
     }
 
-    public function publishOne($id)
+    public function approveOne(int $id)
     {
-        $salary = Salary::findOrFail($id);
+        $result = $this->salaryService->approveOne($id);
 
-        if ($salary->status !== 'approved') {
-            return response()->json(['message' => 'Phải duyệt trước'], 400);
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
         }
 
-        $salary->status = 'published';
-        $salary->save();
+        return response()->json($result['data']);
+    }
 
-        return response()->json($salary);
+    public function publishOne(int $id)
+    {
+        $result = $this->salaryService->publishOne($id);
+
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], $result['code']);
+        }
+
+        return response()->json($result['data']);
     }
 
     public function export(Request $request)
     {
-        $request->validate([
-            'month' => 'required|integer',
-            'year' => 'required|integer'
+        $data = $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2000'
         ]);
 
         return Excel::download(
-            new SalaryExport($request->month, $request->year),
-            "salary_{$request->month}_{$request->year}.xlsx"
+            new SalaryExport(
+                $data['month'],
+                $data['year']
+            ),
+            'salary.xlsx'
         );
-    }
-
-    public function create(Request $request)
-    {
-        $request->validate([
-            'month' => 'required|integer',
-            'year' => 'required|integer'
-        ]);
-
-        $month = $request->month;
-        $year = $request->year;
-
-        // xác định tháng trước
-        $prevMonth = $month == 1 ? 12 : $month - 1;
-        $prevYear = $month == 1 ? $year - 1 : $year;
-
-        // lấy salary tháng trước
-        $prevSalaries = Salary::where('month', $prevMonth)
-            ->where('year', $prevYear)
-            ->get()
-            ->keyBy('employee_id'); // để map nhanh
-
-        // employee đã có lương tháng này
-        $existing = Salary::where('month', $month)
-            ->where('year', $year)
-            ->pluck('employee_id')
-            ->toArray();
-
-        // employee chưa có
-        $employees = DB::table('employees')
-            ->whereNotIn('id', $existing)
-            ->get();
-
-        if ($employees->isEmpty()) {
-            return response()->json([
-                'message' => 'Bảng lương tháng này đã được tạo rồi'
-            ], 400);
-        }
-
-        $data = [];
-
-        foreach ($employees as $emp) {
-            $prev = $prevSalaries->get($emp->id);
-
-            $data[] = [
-                'employee_id' => $emp->id,
-                'month' => $month,
-                'year' => $year,
-
-                // nếu có tháng trước thì copy, không thì 0
-                'base_salary' => $prev->base_salary ?? 0,
-                'bonus' => $prev->bonus ?? 0,
-                'tax' => $prev->tax ?? 0,
-                'total' => ($prev->base_salary ?? 0)
-                    + ($prev->bonus ?? 0)
-                    - ($prev->tax ?? 0),
-                'note' => $prev->note ?? '',
-
-                'status' => 'draft',
-                'created_at' => now(),
-                'updated_at' => now()
-            ];
-        }
-
-        Salary::insert($data);
-
-        return response()->json([
-            'message' => 'Tạo bảng lương thành công (copy từ tháng trước)'
-        ]);
     }
 }
