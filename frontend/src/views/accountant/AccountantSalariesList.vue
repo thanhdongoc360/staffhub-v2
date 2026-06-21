@@ -11,7 +11,7 @@
                 <SidebarAccountant />
             </a-drawer>
 
-            <div class="row">    
+            <div class="row">
                 <div class="d-none d-lg-block col-lg-3">
                     <SidebarAccountant />
                 </div>
@@ -34,7 +34,8 @@
 
                     <!-- Filter -->
                     <div class="mt-3">
-                        <div class="d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch align-items-sm-center">
+                        <div
+                            class="d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch align-items-sm-center">
 
                             <input v-model="search" placeholder="Tìm kiếm theo tên" class="form-control w-100"
                                 style="max-width: 220px;" />
@@ -47,16 +48,12 @@
                             </select>
 
                             <!-- Year -->
-                            <select v-model="year" class="form-select w-100" style="max-width: 150px;">
-                                <option :value="2025">2025</option>
-                                <option :value="2026">2026</option>
-                            </select>
+                            <input v-model.number="year" type="number" class="form-control w-100"
+                                style="max-width: 150px;" placeholder="Năm" />
 
                             <select v-model="status" class="form-select w-100" style="max-width: 220px;">
                                 <option value="">Tất cả</option>
                                 <option value="draft">Nháp</option>
-                                <option value="calculated">Đã tính</option>
-                                <option value="approved">Đã duyệt</option>
                                 <option value="published">Đã công bố</option>
                             </select>
 
@@ -70,15 +67,8 @@
                     <!-- Action buttons -->
                     <div class="mt-3">
                         <div class="d-flex flex-column flex-sm-row gap-2 flex-wrap">
-                            <button class="btn btn-success d-block d-sm-inline-block" @click="calculate">
-                                Tính lương toàn bộ
-                            </button>
 
-                            <button class="btn btn-warning d-block d-sm-inline-block" @click="approve">
-                                Duyệt toàn bộ
-                            </button>
-
-                            <button class="btn btn-dark d-block d-sm-inline-block" @click="publish">
+                            <button class="btn btn-success d-block d-sm-inline-block" @click="publish">
                                 Công bố toàn bộ
                             </button>
                         </div>
@@ -87,80 +77,62 @@
                     <!-- Table -->
                     <div class="table-responsive mt-4">
                         <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Nhân viên</th>
-                                        <th>Tổng lương</th>
-                                        <th class="d-none d-md-table-cell">Tháng/Năm</th>
-                                        <th>Trạng thái</th>
-                                        <th class="d-none d-lg-table-cell">Hành động</th>
-                                        <th>Thực hiện</th>
-                                    </tr>
-                                </thead>
+                            <thead>
+                                <tr>
+                                    <th>Nhân viên</th>
+                                    <th>Tổng lương</th>
+                                    <th class="d-none d-md-table-cell">Tháng/Năm</th>
+                                    <th>Trạng thái</th>
+                                    <th class="d-none d-lg-table-cell">Hành động</th>
+                                    <th>Thực hiện</th>
+                                </tr>
+                            </thead>
 
-                                <tbody>
-                                    <tr v-for="s in salaries" :key="s.id">
-                                        <td class="text-nowrap">{{ s.user_name }}</td>
-                                        <td>{{ s.total }}</td>
-                                        <td class="d-none d-md-table-cell">{{ s.month }} / {{ s.year }}</td>
-                                        <td>
-                                            <span v-if="s.status === 'draft'" class="badge bg-secondary">
-                                                Nháp
-                                            </span>
+                            <tbody>
+                                <tr v-for="s in salaries" :key="s.id">
+                                    <td class="text-nowrap">{{ s.user_name }}</td>
+                                    <td>{{ s.total }}</td>
+                                    <td class="d-none d-md-table-cell">{{ s.month }} / {{ s.year }}</td>
+                                    <td>
+                                        <span v-if="s.status === 'draft'" class="badge bg-secondary">
+                                            Nháp
+                                        </span>
 
-                                            <span v-else-if="s.status === 'calculated'" class="badge bg-info">
-                                                Đã tính
-                                            </span>
+                                        <span v-else class="badge bg-success">
+                                            Đã công bố
+                                        </span>
+                                    </td>
 
-                                            <span v-else-if="s.status === 'approved'" class="badge bg-warning">
-                                                Đã duyệt
-                                            </span>
+                                    <td class="d-none d-lg-table-cell">
+                                        <div class="d-flex flex-column flex-xl-row gap-2">
+                                            <button class="btn btn-success btn-sm" @click="publishOne(s.id)"
+                                                :disabled="s.status === 'published'">
+                                                Công bố
+                                            </button>
+                                        </div>
+                                    </td>
 
-                                            <span v-else class="badge bg-success">
-                                                Đã công bố
-                                            </span>
-                                        </td>
+                                    <td>
+                                        <a-space>
+                                            <!-- View -->
+                                            <i class="fa-solid fa-eye text-info" style="cursor: pointer"
+                                                @click="viewSalary(s.id)">
+                                            </i>
 
-                                        <td class="d-none d-lg-table-cell">
-                                            <div class="d-flex flex-column flex-xl-row gap-2">
-                                                <button class="btn btn-success btn-sm" @click="calculateOne(s.id)"
-                                                    :disabled="s.status !== 'draft'">
-                                                    Tính
-                                                </button>
+                                            <!-- Edit -->
+                                            <i class="fa-solid fa-pen-to-square text-primary" style="cursor: pointer"
+                                                @click="editSalary(s.id)">
+                                            </i>
+                                        </a-space>
+                                    </td>
+                                </tr>
 
-                                                <button class="btn btn-warning btn-sm" @click="approveOne(s.id)"
-                                                    :disabled="s.status !== 'calculated'">
-                                                    Duyệt
-                                                </button>
-
-                                                <button class="btn btn-dark btn-sm" @click="publishOne(s.id)"
-                                                    :disabled="s.status !== 'approved'">
-                                                    Công bố
-                                                </button>
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            <a-space>
-                                                <!-- View -->
-                                                <i class="fa-solid fa-eye text-info" style="cursor: pointer"
-                                                    @click="viewSalary(s.id)">
-                                                </i>
-
-                                                <!-- Edit -->
-                                                <i class="fa-solid fa-pen-to-square text-primary"
-                                                    style="cursor: pointer" @click="editSalary(s.id)">
-                                                </i>
-                                            </a-space>
-                                        </td>
-                                    </tr>
-
-                                    <tr v-if="salaries.length === 0">
-                                        <td colspan="6" class="text-center text-muted">
-                                            Không có dữ liệu lương
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tr v-if="salaries.length === 0">
+                                    <td colspan="6" class="text-center text-muted">
+                                        Không có dữ liệu lương
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
 
@@ -168,10 +140,11 @@
             </div>
         </div>
 
-        <a-modal v-model:open="showModal" title="Chi tiết / chỉnh sửa lương" @ok="saveSalary" :ok-button-props="{
-            disabled: isLocked,
-            style: { display: mode === 'view' ? 'none' : 'inline-block' }
-        }">
+        <a-modal :open="showModal" @update:open="(value) => showModal = value" title="Chi tiết / chỉnh sửa lương"
+            ok-text="Lưu" cancel-text="Đóng" @ok="saveSalary" :ok-button-props="{
+                disabled: isLocked,
+                style: { display: mode === 'view' ? 'none' : 'inline-block' }
+            }">
             <div v-if="selectedSalary">
 
                 <p><b>Nhân viên:</b> {{ selectedSalary.employee.user.name }}</p>
@@ -179,7 +152,16 @@
 
                 <p>
                     <b>Trạng thái:</b>
-                    <span class="badge bg-info">{{ selectedSalary.status }}</span>
+
+                    <span :class="selectedSalary.status === 'published'
+                        ? 'badge bg-success'
+                        : 'badge bg-secondary'">
+                        {{
+                            selectedSalary.status === 'published'
+                                ? 'Đã công bố'
+                        : 'Nháp'
+                        }}
+                    </span>
                 </p>
 
                 <div class="row g-3 mt-2">
@@ -249,24 +231,7 @@ const loadSalaries = async () => {
         }
     })
 
-    salaries.value = res.data.data
-}
-
-const calculate = async () => {
-    await http.post('/accountant/salary/calculate', {
-        month: month.value,
-        year: year.value
-    })
-    loadSalaries()
-}
-
-const approve = async () => {
-    await http.post('/accountant/salary/approve', {
-        month: month.value,
-        year: year.value
-    })
-
-    loadSalaries()
+    salaries.value = res.data
 }
 
 const publish = async () => {
@@ -308,6 +273,11 @@ const isLocked = computed(() => {
     )
 })
 
+const closeModal = () => {
+    showModal.value = false
+    selectedSalary.value = null
+}
+
 const saveSalary = async () => {
     try {
         const res = await http.put(
@@ -315,25 +285,15 @@ const saveSalary = async () => {
             selectedSalary.value
         )
 
-        selectedSalary.value = res.data
+        selectedSalary.value = null
+        showModal.value = false
+
+        await loadSalaries()
 
         alert('Cập nhật thành công')
-
-        showModal.value = false
-        loadSalaries()
     } catch (error) {
         alert(error.response?.data?.message || 'Lỗi')
     }
-}
-
-const calculateOne = async (id) => {
-    await http.post(`/accountant/salary/${id}/calculate`)
-    loadSalaries()
-}
-
-const approveOne = async (id) => {
-    await http.post(`/accountant/salary/${id}/approve`)
-    loadSalaries()
 }
 
 const publishOne = async (id) => {
@@ -355,7 +315,7 @@ const exportExcel = async () => {
         )
 
         // tạo URL tạm thời cho file vừa nhận được để có thể tải về
-        const url = window.URL.createObjectURL(new Blob([res.data])) 
+        const url = window.URL.createObjectURL(new Blob([res.data]))
         // thẻ a ảo để tải file về vì brower chỉ cho phép tải file qua thẻ a có thuộc tính download
         const link = document.createElement('a')
 

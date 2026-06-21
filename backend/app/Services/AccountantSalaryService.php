@@ -59,43 +59,7 @@ class AccountantSalaryService
 
         return $query
             ->orderBy('salaries.id', 'desc')
-            ->paginate(10);
-    }
-
-    public function calculate(
-        int $month,
-        int $year
-    )
-    {
-        Salary::where('month', $month)
-            ->where('year', $year)
-            ->where('status', 'draft')
-            ->get()
-            ->each(function ($salary) {
-
-                $salary->total =
-                    $salary->base_salary
-                    + $salary->bonus
-                    - $salary->tax;
-
-                $salary->status =
-                    'calculated';
-
-                $salary->save();
-            });
-    }
-
-    public function approve(
-        int $month,
-        int $year
-    )
-    {
-        Salary::where('month', $month)
-            ->where('year', $year)
-            ->where('status', 'calculated')
-            ->update([
-                'status' => 'approved'
-            ]);
+            ->get();
     }
 
     public function publish(
@@ -105,7 +69,7 @@ class AccountantSalaryService
     {
         Salary::where('month', $month)
             ->where('year', $year)
-            ->where('status', 'approved')
+            ->where('status', 'draft')
             ->update([
                 'status' => 'published'
             ]);
@@ -135,75 +99,18 @@ class AccountantSalaryService
             ];
         }
 
-        $salary->base_salary =
-            $data['base_salary'];
+        $salary->base_salary = $data['base_salary'];
 
-        $salary->bonus =
-            $data['bonus'] ?? 0;
+        $salary->bonus = $data['bonus'] ?? 0;
 
-        $salary->tax =
-            $data['tax'] ?? 0;
+        $salary->tax = $data['tax'] ?? 0;
 
-        $salary->note =
-            $data['note'];
+        $salary->note = $data['note'] ?? '';
 
         $salary->total =
             $salary->base_salary
             + $salary->bonus
             - $salary->tax;
-
-        $salary->save();
-
-        return [
-            'success' => true,
-            'data' => $salary
-        ];
-    }
-
-    public function calculateOne(int $id)
-    {
-        $salary = Salary::findOrFail($id);
-
-        if ($salary->status !== 'draft') {
-
-            return [
-                'success' => false,
-                'message' =>
-                    'Chỉ tính khi là draft',
-                'code' => 400
-            ];
-        }
-
-        $salary->total =
-            $salary->base_salary
-            + $salary->bonus
-            - $salary->tax;
-
-        $salary->status =
-            'calculated';
-
-        $salary->save();
-
-        return [
-            'success' => true,
-            'data' => $salary
-        ];
-    }
-
-    public function approveOne(int $id)
-    {
-        $salary = Salary::findOrFail($id);
-
-        if ($salary->status !== 'calculated') {
-
-            return [
-                'success' => false,
-                'message' => 'Phải tính trước',
-                'code' => 400
-            ];
-        }
-
-        $salary->status = 'approved';
 
         $salary->save();
 
@@ -217,11 +124,11 @@ class AccountantSalaryService
     {
         $salary = Salary::findOrFail($id);
 
-        if ($salary->status !== 'approved') {
+        if ($salary->status === 'published') {
 
             return [
                 'success' => false,
-                'message' => 'Phải duyệt trước',
+                'message' => 'Bảng lương đã được công bố',
                 'code' => 400
             ];
         }
@@ -236,10 +143,7 @@ class AccountantSalaryService
         ];
     }
 
-    public function createSalaryTable(
-        int $month,
-        int $year
-    )
+    public function createSalaryTable(int $month, int $year)
     {
         $prevMonth =
             $month == 1 ? 12 : $month - 1;

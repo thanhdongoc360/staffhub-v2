@@ -149,6 +149,7 @@ const statusClass = (status) => {
     if (status === 'present') return 'status-present'
     if (status === 'late') return 'status-late'
     if (status === 'half_day') return 'status-half-day'
+    if (status === 'absent') return 'status-absent'
     return 'status-default'
 }
 
@@ -156,6 +157,7 @@ const statusText = (status) => {
     if (status === 'present') return 'Đi làm'
     if (status === 'late') return 'Đi muộn'
     if (status === 'half_day') return 'Nửa ngày'
+    if (status === 'absent') return 'Vắng mặt'
     return status || 'Không xác định'
 }
 

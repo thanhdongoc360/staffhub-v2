@@ -137,16 +137,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', [AccountantDashboardController::class, 'index']);
 
         Route::get('/salaries', [AccountantSalaryController::class, 'index']);
-        Route::post('/salary/calculate', [AccountantSalaryController::class, 'calculate']);
-        Route::post('/salary/approve', [AccountantSalaryController::class, 'approve']);
         Route::post('/salary/publish', [AccountantSalaryController::class, 'publish']);
         Route::post('/salary/create', [AccountantSalaryController::class, 'create']);
 
         Route::get('/salary/{id}', [AccountantSalaryController::class, 'show']);
         Route::put('/salary/{id}', [AccountantSalaryController::class, 'update']);
 
-        Route::post('/salary/{id}/calculate', [AccountantSalaryController::class, 'calculateOne']);
-        Route::post('/salary/{id}/approve', [AccountantSalaryController::class, 'approveOne']);
         Route::post('/salary/{id}/publish', [AccountantSalaryController::class, 'publishOne']);
         Route::post('/salary/export', [AccountantSalaryController::class, 'export']);
 

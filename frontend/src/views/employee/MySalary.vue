@@ -5,7 +5,8 @@
                 <i class="fa-solid fa-bars"></i>
             </a-button>
 
-            <a-drawer :visible="showSidebar" placement="left" width="260" @close="showSidebar = false" class="d-lg-none">
+            <a-drawer :visible="showSidebar" placement="left" width="260" @close="showSidebar = false"
+                class="d-lg-none">
                 <SidebarEmployee />
             </a-drawer>
 
@@ -18,15 +19,18 @@
                     <h1 class="mt-3">Quản lý lương của tôi</h1>
 
                     <a-form class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
-                        <a-select v-model:value="selectedMonth" placeholder="Chọn tháng" class="w-100" style="max-width: 220px;">
+                        <a-select v-model:value="selectedMonth" placeholder="Chọn tháng" class="w-100"
+                            style="max-width: 220px;">
                             <a-select-option v-for="m in 12" :key="m" :value="m">
                                 Tháng {{ m }}
                             </a-select-option>
                         </a-select>
 
-                        <a-input v-model:value="selectedYear" placeholder="Nhập năm" class="w-100" style="max-width: 220px;" />
+                        <a-input v-model:value="selectedYear" placeholder="Nhập năm" class="w-100"
+                            style="max-width: 220px;" />
 
-                        <a-button type="primary" @click="searchSalary" class="d-block d-sm-inline-block">Tìm kiếm</a-button>
+                        <a-button type="primary" @click="searchSalary" class="d-block d-sm-inline-block">Tìm
+                            kiếm</a-button>
                     </a-form>
 
                     <div class="table-responsive mt-4">
@@ -36,6 +40,7 @@
                                     <th scope="col">Tháng/Năm</th>
                                     <th scope="col">Lương cơ bản</th>
                                     <th scope="col">Thưởng</th>
+                                    <th scope="col">Thuế</th>
                                     <th scope="col">Tổng</th>
                                     <th class="d-none d-lg-table-cell" scope="col">Ghi chú</th>
                                 </tr>
@@ -45,8 +50,15 @@
                                     <td>{{ salary.month }}/{{ salary.year }}</td>
                                     <td>{{ salary.base_salary }}</td>
                                     <td>{{ salary.bonus }}</td>
+                                    <td>{{ salary.tax }}</td>
                                     <td>{{ salary.total }}</td>
                                     <td class="d-none d-lg-table-cell">{{ salary.note }}</td>
+                                </tr>
+
+                                <tr v-if="salaries.length === 0">
+                                    <td colspan="6" class="text-center text-muted">
+                                        Chưa có bảng lương được công bố
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

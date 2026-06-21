@@ -30,30 +30,6 @@ class AccountantSalaryController extends Controller
         );
     }
 
-    public function calculate(Request $request)
-    {
-        $this->salaryService->calculate(
-            $request->month,
-            $request->year
-        );
-
-        return response()->json([
-            'message' => 'Calculated'
-        ]);
-    }
-
-    public function approve(Request $request)
-    {
-        $this->salaryService->approve(
-            $request->month,
-            $request->year
-        );
-
-        return response()->json([
-            'message' => 'Approved'
-        ]);
-    }
-
     public function publish(Request $request)
     {
         $this->salaryService->publish(
@@ -107,32 +83,6 @@ class AccountantSalaryController extends Controller
         ]);
 
         $result = $this->salaryService->updateSalary($id, $data);
-
-        if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message']
-            ], $result['code']);
-        }
-
-        return response()->json($result['data']);
-    }
-
-    public function calculateOne(int $id)
-    {
-        $result = $this->salaryService->calculateOne($id);
-
-        if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message']
-            ], $result['code']);
-        }
-
-        return response()->json($result['data']);
-    }
-
-    public function approveOne(int $id)
-    {
-        $result = $this->salaryService->approveOne($id);
 
         if (!$result['success']) {
             return response()->json([

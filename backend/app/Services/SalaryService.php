@@ -10,6 +10,7 @@ class SalaryService
     {
         $query = $user->employee
             ->salaries()
+            ->where('status', 'published')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc');
 

@@ -21,7 +21,7 @@
                         <h1 class="mb-0">Dashboard kế toán</h1>
                     </div>
 
-                    <div class="mt-3">   
+                    <div class="mt-3">
                         <div class="row g-2 align-items-stretch align-items-md-center">
 
                             <div class="col-12 col-sm-6 col-md-auto">
@@ -32,11 +32,9 @@
                                 </select>
                             </div>
 
-                            <div class="col-12 col-sm-6 col-md-auto">
-                                <select v-model="year" class="form-select form-select-sm">
-                                    <option :value="2025">2025</option>
-                                    <option :value="2026">2026</option>
-                                </select>
+                            <div class="col-auto">
+                                <input v-model.number="year" type="number" class="form-control form-control-sm"
+                                    placeholder="Năm" style="width: 120px" />
                             </div>
 
                             <div class="col-12 col-sm-auto">
@@ -128,7 +126,7 @@
 
                         </div>
 
-                        <div class="card dashboard-card p-3 mb-4 mt-3">
+                        <!-- <div class="card dashboard-card p-3 mb-4 mt-3">
                             <h5>Cảnh báo</h5>
 
                             <p class="text-danger">
@@ -138,7 +136,7 @@
                             <p class="text-warning">
                                 Lương âm: {{ data.warnings.negative_salary || 0 }}
                             </p>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
