@@ -13,12 +13,12 @@ class ScheduleController extends Controller
 
     public function mySchedule(Request $request)
     {  
-        $result = $this->scheduleService
+        $result = $this->scheduleService  
             ->getMySchedule(
                 auth()->user(),
                 $request->type ?? 'week'
             );
-
+  
         if (!$result['success']) {
             return response()->json([
                 'message' => $result['message']

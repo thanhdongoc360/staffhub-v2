@@ -9,64 +9,47 @@ class AccountantDashboardService
     public function getDashboard(
         int $month,
         int $year
-    )
-    {
+    ) {
         $query = DB::table('salaries')
             ->where('month', $month)
             ->where('year', $year);
 
         return [
-            'total_payroll' =>
-                (clone $query)->sum('total'),
+            'total_payroll' => (clone $query)->sum('total'),
 
-            'total_employees' =>
-                (clone $query)->count(),
-
-            'calculated' =>
-                (clone $query)
-                    ->where('status', 'calculated')
-                    ->count(),
-
-            'not_calculated' =>
-                (clone $query)
-                    ->where('status', 'draft')
-                    ->count(),
-
-            'warnings' => [
-
-                'missing_base_salary' =>
-                    (clone $query)
-                        ->whereNull('base_salary')
-                        ->count(),
-
-                'negative_salary' =>
-                    (clone $query)
-                        ->where('total', '<', 0)
-                        ->count(),
-            ],
+            'total_employees' => (clone $query)->count(),
 
             'status' => [
 
-                'draft' =>
-                    (clone $query)
-                        ->where('status', 'draft')
-                        ->count(),
+                'draft' => (clone $query)
+                    ->where('status', 'draft')
+                    ->count(),
 
-                'calculated' =>
-                    (clone $query)
-                        ->where('status', 'calculated')
-                        ->count(),
+                'published' => (clone $query)
+                    ->where('status', 'published')
+                    ->count(),
+            ],
 
-                'approved' =>
-                    (clone $query)
-                        ->where('status', 'approved')
-                        ->count(),
-
-                'published' =>
-                    (clone $query)
-                        ->where('status', 'published')
-                        ->count(),
-            ]
+            'latest_salaries' => (clone $query)
+                ->join('employees', 'salaries.employee_id', '=', 'employees.id')
+                ->join('users', 'employees.user_id', '=', 'users.id')
+                ->select(
+                    'salaries.id',
+                    'users.name as employee_name',
+                    'employees.employee_code',
+                    'employees.position',
+                    'employees.department',
+                    'salaries.base_salary',
+                    'salaries.bonus',
+                    'salaries.tax',
+                    'salaries.total',
+                    'salaries.status',
+                    'salaries.month',
+                    'salaries.year'
+                )
+                ->orderByDesc('salaries.id')
+                ->limit(5)
+                ->get(),
         ];
     }
 }

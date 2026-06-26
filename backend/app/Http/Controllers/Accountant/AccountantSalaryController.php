@@ -8,7 +8,7 @@ use App\Services\AccountantSalaryService;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SalaryExport;
-
+  
 class AccountantSalaryController extends Controller
 {
     public function __construct(

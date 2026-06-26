@@ -33,7 +33,8 @@
                     </div>
 
                     <div class="mt-3">
-                        <div class="d-flex flex-column flex-sm-row flex-wrap gap-3 align-items-stretch align-items-sm-end">
+                        <div
+                            class="d-flex flex-column flex-sm-row flex-wrap gap-3 align-items-stretch align-items-sm-end">
                             <div class="filter-item filter-item-sm">
                                 <label class="form-label fw-semibold mb-1">Tháng</label>
                                 <input type="number" v-model="month" placeholder="Tháng" class="form-control w-100" />
@@ -61,6 +62,7 @@
                                     <th class="d-none d-md-table-cell">Check Out</th>
                                     <th>Trạng thái</th>
                                     <th class="d-none d-lg-table-cell">Giờ làm</th>
+                                    <th class="d-none d-lg-table-cell">Ghi chú</th>
                                 </tr>
                             </thead>
 
@@ -76,10 +78,14 @@
                                         {{ Math.floor((item.working_minutes || 0) / 60) }}h
                                         {{ (item.working_minutes || 0) % 60 }}m
                                     </td>
+
+                                    <td class="d-none d-lg-table-cell">
+                                        {{ item.note || '-' }}
+                                    </td>
                                 </tr>
 
                                 <tr v-if="list.length === 0">
-                                    <td colspan="5" class="text-center text-muted">
+                                    <td colspan="6" class="text-center text-muted">
                                         Không có dữ liệu chấm công
                                     </td>
                                 </tr>
@@ -103,26 +109,22 @@ const list = ref([])
 const month = ref(new Date().getMonth() + 1)
 const year = ref(new Date().getFullYear())
 
-// Hàm để xác định class CSS dựa trên trạng thái
 const statusClass = (status) => {
-    const value = (status || '').toLowerCase()
-
-    if (value.includes('present') || value.includes('đi làm')) return 'status-present'
-    if (value.includes('late') || value.includes('muộn')) return 'status-late'
-    if (value.includes('half') || value.includes('nửa')) return 'status-half-day'
-    if (value.includes('absent') || value.includes('vắng')) return 'status-absent'
+    if (status === 'present') return 'status-present'
+    if (status === 'late') return 'status-late'
+    if (status === 'half_day') return 'status-half-day'
+    if (status === 'absent') return 'status-absent'
+    if (status === 'pending') return 'status-pending'
 
     return 'status-default'
 }
 
-// Hàm để hiển thị văn bản dựa trên trạng thái
 const statusText = (status) => {
-    const value = (status || '').toLowerCase()
-
-    if (value.includes('present') || value.includes('đi làm')) return 'Đi làm'
-    if (value.includes('late') || value.includes('muộn')) return 'Đi muộn'
-    if (value.includes('half') || value.includes('nửa')) return 'Nửa ngày'
-    if (value.includes('absent') || value.includes('vắng')) return 'Vắng mặt'
+    if (status === 'present') return 'Đi làm'
+    if (status === 'late') return 'Đi muộn'
+    if (status === 'half_day') return 'Nửa ngày'
+    if (status === 'absent') return 'Vắng mặt'
+    if (status === 'pending') return 'Chưa hoàn tất'
 
     return status || 'Không xác định'
 }
@@ -131,12 +133,12 @@ const checkIn = async () => {
     try {
         await http.post('/attendance/check-in')
         alert('Check-in thành công')
-        fetchHistory()   
+        fetchHistory()
     } catch (e) {
         alert(e.response.data.message)
     }
 }
-   
+
 const checkOut = async () => {
     try {
         await http.post('/attendance/check-out')
@@ -178,6 +180,16 @@ onMounted(fetchHistory)
     flex: 0 1 160px;
 }
 
+.status-absent {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.status-pending {
+    color: #6c757d;
+    font-weight: 600;
+}
+
 .status-present {
     color: #198754;
     font-weight: 600;
@@ -201,10 +213,11 @@ onMounted(fetchHistory)
 
 /* CSS bên trong chỉ chạy khi màn hình <= 576px */
 @media (max-width: 576px) {
+
     .filter-item,
     .filter-item-sm,
     .filter-item-xs {
-        flex-basis: 100%; 
+        flex-basis: 100%;
     }
 }
 </style>

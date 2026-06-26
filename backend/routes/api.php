@@ -73,11 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/salaries', [SalaryController::class, 'adminIndex']);
         Route::post('/salaries', [SalaryController::class, 'store']);
-
+  
         Route::get('/profile', [AdminProfileController::class, 'profile']);
         Route::put('/profile', [AdminProfileController::class, 'updateProfile']);
         Route::put('/change-password', [AdminProfileController::class, 'changePassword']);
-
+     
         Route::get('/performance', [PerformanceController::class, 'index']);
         Route::get('/performance/{employeeId}', [PerformanceController::class, 'show']);
         Route::get('/performance/history/{employeeId}', [PerformanceController::class, 'history']);
@@ -87,7 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/shifts/{id}', [ScheduleController::class, 'updateShift']);
         Route::delete('/shifts/{id}', [ScheduleController::class, 'deleteShift']);
     });
-
+   
     Route::middleware('role:management')->prefix('management')->group(function () {
         Route::get('/employees', [ManagementEmployeeController::class, 'index']);
         Route::get('employees/{id}', [ManagementEmployeeController::class, 'show']);
@@ -101,7 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 ),
                 'employee.xlsx'
             );
-        });
+        });    
 
         Route::get('/profile', [ManagementProfileController::class, 'profile']);
         Route::put('/profile', [ManagementProfileController::class, 'updateProfile']);
@@ -110,15 +110,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/leaves', [LeaveController::class, 'managementIndex']);
         Route::post('/leaves/{id}/approve', [LeaveController::class, 'managementApprove']);
         Route::post('/leaves/{id}/reject', [LeaveController::class, 'managementReject']);
-
+  
         Route::get('/salaries', [SalaryController::class, 'managementIndex']);
 
         Route::get('/dashboard', [ManagementEmployeeController::class, 'dashboard']);
-
+   
         Route::get('/performance', [PerformanceController::class, 'index']);
         Route::get('/performance/{employeeId}', [PerformanceController::class, 'show']);
         Route::post('/performance', [PerformanceController::class, 'store']);
-        Route::put('/performance/{id}/confirm', [PerformanceController::class, 'confirm']);
+        // Route::put('/performance/{id}/confirm', [PerformanceController::class, 'confirm']);
         Route::get('/performance/history/{employeeId}', [PerformanceController::class, 'history']);
 
         Route::get('/attendance', [AttendanceController::class, 'managementIndex']);
@@ -129,7 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/schedule/assign', [ScheduleController::class, 'assignEmployees']);
         Route::post('/schedule/create-week', [ScheduleController::class, 'createWeekSchedule']);
 
-        Route::get('/schedule', [ScheduleController::class, 'managementView']);
+        Route::get('/schedule', [ScheduleController::class, 'managementView']); 
         Route::get('/schedule/current', [ScheduleController::class, 'currentWeekSchedule']);
     });
 
@@ -142,7 +142,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/salary/{id}', [AccountantSalaryController::class, 'show']);
         Route::put('/salary/{id}', [AccountantSalaryController::class, 'update']);
-
+  
         Route::post('/salary/{id}/publish', [AccountantSalaryController::class, 'publishOne']);
         Route::post('/salary/export', [AccountantSalaryController::class, 'export']);
 

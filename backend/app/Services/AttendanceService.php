@@ -33,7 +33,8 @@ class AttendanceService
                 'date' => $today
             ],
             [
-                'check_in_time' => now()
+                'check_in_time' => now(),
+                'status' => 'pending'
             ]
         );
 
@@ -50,9 +51,9 @@ class AttendanceService
         $today = Carbon::today();
 
         $attendance = Attendance::where(
-                'employee_id',
-                $employee->id
-            )
+            'employee_id',
+            $employee->id
+        )
             ->where('date', $today)
             ->first();
 
@@ -75,8 +76,8 @@ class AttendanceService
         $attendance->check_out_time = now();
 
         $workingMinutes = Carbon::parse(
-                $attendance->check_in_time
-            )
+            $attendance->check_in_time
+        )
             ->diffInMinutes(
                 $attendance->check_out_time
             );
@@ -105,20 +106,24 @@ class AttendanceService
             $rule->work_start_time
         );
 
-        if ($checkIn->gt($startTime)) {
+        $minValidWorkMinutes = 60;
 
-            $lateMinutes =
-                $startTime->diffInMinutes($checkIn);
+        if ($workingMinutes < $minValidWorkMinutes) {
+            $attendance->status = 'pending';
+            $attendance->note = 'Thời gian làm việc quá ngắn, cần quản lý xác nhận';
+        } elseif ($workingMinutes < $rule->half_day_threshold_minutes) {
+            $attendance->status = 'pending';
+            $attendance->note = 'Thời gian làm việc chưa đủ nửa ngày, cần quản lý xác nhận';
+        } elseif ($workingMinutes < $rule->standard_work_minutes) {
+            $attendance->status = 'half_day';
+        } elseif ($checkIn->gt($startTime)) {
+            $lateMinutes = $startTime->diffInMinutes($checkIn);
 
-            if (
-                $lateMinutes <=
-                $rule->late_threshold_minutes
-            ) {
+            if ($lateMinutes <= $rule->late_threshold_minutes) {
                 $attendance->status = 'late';
             } else {
                 $attendance->status = 'half_day';
             }
-
         } else {
             $attendance->status = 'present';
         }
@@ -230,11 +235,11 @@ class AttendanceService
                     'like',
                     "%$search%"
                 )
-                ->orWhere(
-                    'employees.employee_code',
-                    'like',
-                    "%$search%"
-                );
+                    ->orWhere(
+                        'employees.employee_code',
+                        'like',
+                        "%$search%"
+                    );
             });
         }
 

@@ -7,10 +7,10 @@ use App\Services\SalaryService;
 
 class SalaryController extends Controller
 {
-    public function __construct(
+    public function __construct(   
         private SalaryService $salaryService
     ) {}
-
+   
     public function mySalaries(Request $request)
     {
         return response()->json(   
@@ -25,7 +25,7 @@ class SalaryController extends Controller
     {
         return response()->json(
             $this->salaryService->getAllSalaries(
-                $request->only(['month', 'year', 'page', 'per_page'])
+                $request->only(['month', 'year', 'search', 'page', 'per_page'])
             )
         );
     }
@@ -51,7 +51,7 @@ class SalaryController extends Controller
         $salaries = $this->salaryService
             ->getDepartmentSalaries(
                 $request->user(),
-                $request->only(['month', 'year'])
+                $request->only(['month', 'year', 'search'])
             );
 
         if (!$salaries) {

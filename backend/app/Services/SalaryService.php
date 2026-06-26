@@ -20,6 +20,17 @@ class SalaryService
     public function getAllSalaries(array $filters = [])
     {
         $query = Salary::with('employee.user')
+            ->when(!empty($filters['search']), function ($q) use ($filters) {
+                $search = $filters['search'];
+
+                $q->whereHas('employee', function ($employeeQuery) use ($search) {
+                    $employeeQuery
+                        ->where('employee_code', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc');
 
@@ -58,6 +69,17 @@ class SalaryService
         $query = Salary::with('employee.user')
             ->whereHas('employee', function ($q) use ($department) {
                 $q->where('department', $department);
+            })
+            ->when(!empty($filters['search']), function ($q) use ($filters) {
+                $search = $filters['search'];
+
+                $q->whereHas('employee', function ($employeeQuery) use ($search) {
+                    $employeeQuery
+                        ->where('employee_code', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('name', 'like', "%{$search}%");
+                        });
+                });
             })
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc');

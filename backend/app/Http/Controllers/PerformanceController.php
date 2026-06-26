@@ -7,17 +7,17 @@ use App\Services\PerformanceService;
 
 class PerformanceController extends Controller
 {
-    public function __construct(
+    public function __construct(  
         private PerformanceService $performanceService
     ) {}
-
-    public function index(Request $request)
+        
+    public function index(Request $request)   
     {
         $result = $this->performanceService
             ->getEmployeeReviews(
                 auth()->user(),
                 $request->only([
-                    'month',
+                    'month',   
                     'year',
                     'search',
                     'page',
@@ -76,7 +76,6 @@ class PerformanceController extends Controller
                     'discipline_comment',
                     'collaboration_comment',
                     'reviewer_comment',
-                    'status'
                 ]))
             );
 
@@ -89,19 +88,19 @@ class PerformanceController extends Controller
         return response()->json($result['data']);
     }
 
-    public function confirm(int $id)
-    {
-        $result = $this->performanceService
-            ->confirmReview(auth()->user(), $id);
+    // public function confirm(int $id)
+    // {
+    //     $result = $this->performanceService
+    //         ->confirmReview(auth()->user(), $id);
 
-        if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message']
-            ], $result['code']);
-        }
+    //     if (!$result['success']) {
+    //         return response()->json([
+    //             'message' => $result['message']
+    //         ], $result['code']);
+    //     }
 
-        return response()->json($result['data']);
-    }
+    //     return response()->json($result['data']);
+    // }
 
     public function history(int $employeeId)
     {

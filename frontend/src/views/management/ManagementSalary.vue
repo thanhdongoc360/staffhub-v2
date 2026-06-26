@@ -5,13 +5,8 @@
                 <i class="fa-solid fa-bars"></i>
             </a-button>
 
-            <a-drawer
-                :visible="showSidebar"
-                placement="left"
-                width="260"
-                @close="showSidebar = false"
-                class="d-lg-none"
-            >
+            <a-drawer :visible="showSidebar" placement="left" width="260" @close="showSidebar = false"
+                class="d-lg-none">
                 <SidebarManagement />
             </a-drawer>
 
@@ -21,33 +16,28 @@
                 </div>
 
                 <div class="col-12 col-lg-9">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
+                    <div
+                        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
                         <h1 class="mb-0">Quản lý lương phòng ban</h1>
                     </div>
 
                     <!-- FILTER -->
-                    <a-form class="d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch align-items-sm-center mt-3">
-                        <a-select
-                            :value="selectedMonth"
-                            @update:value="selectedMonth = $event"
-                            placeholder="Chọn tháng"
-                            class="w-100"
-                            style="max-width: 220px"
-                        >
+                    <a-form
+                        class="d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch align-items-sm-center mt-3">
+                        <a-input v-model:value="search" placeholder="Tìm theo tên / mã NV" class="w-100"
+                            style="max-width: 220px" />
+
+                        <a-select :value="selectedMonth" @update:value="selectedMonth = $event" placeholder="Chọn tháng"
+                            class="w-100" style="max-width: 220px">
                             <a-select-option v-for="m in 12" :key="m" :value="m">
                                 Tháng {{ m }}
                             </a-select-option>
                         </a-select>
 
-                        <a-input
-                            :value="selectedYear"
-                            @update:value="selectedYear = $event"
-                            placeholder="Nhập năm"
-                            class="w-100"
-                            style="max-width: 220px"
-                        />
+                        <a-input :value="selectedYear" @update:value="selectedYear = $event" placeholder="Nhập năm"
+                            class="w-100" style="max-width: 220px" />
 
-                        <a-button type="primary" @click="searchSalary" class="d-block d-sm-inline-block">
+                        <a-button type="primary" @click="fetchSalaries" class="d-block d-sm-inline-block">
                             Tìm kiếm
                         </a-button>
                     </a-form>
@@ -103,19 +93,13 @@ const showSidebar = ref(false)
 const selectedMonth = ref(null)
 const selectedYear = ref(null)
 
-const fetchSalaries = async () => {
-    try {
-        const res = await http.get('/management/salaries')
-        salaries.value = res.data
-    } catch (error) {
-        console.log(error)
-    }
-}
+const search = ref('')
 
-const searchSalary = async () => {
+const fetchSalaries = async () => {
     try {
         const res = await http.get('/management/salaries', {
             params: {
+                search: search.value,
                 month: selectedMonth.value,
                 year: selectedYear.value
             }

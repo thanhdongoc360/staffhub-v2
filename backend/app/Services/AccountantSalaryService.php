@@ -24,7 +24,9 @@ class AccountantSalaryService
             )
             ->select(
                 'salaries.*',
-                'users.name as user_name'
+                'users.name as user_name',
+                'employees.employee_code',
+                'employees.department'
             );
 
         if (!empty($filters['month'])) {
@@ -65,8 +67,7 @@ class AccountantSalaryService
     public function publish(
         int $month,
         int $year
-    )
-    {
+    ) {
         Salary::where('month', $month)
             ->where('year', $year)
             ->where('status', 'draft')
@@ -85,8 +86,7 @@ class AccountantSalaryService
     public function updateSalary(
         int $id,
         array $data
-    )
-    {
+    ) {
         $salary = Salary::findOrFail($id);
 
         if ($salary->status === 'published') {
@@ -94,7 +94,7 @@ class AccountantSalaryService
             return [
                 'success' => false,
                 'message' =>
-                    'Cannot edit published salary',
+                'Cannot edit published salary',
                 'code' => 403
             ];
         }
@@ -152,17 +152,17 @@ class AccountantSalaryService
             $month == 1 ? $year - 1 : $year;
 
         $prevSalaries = Salary::where(
-                'month',
-                $prevMonth
-            )
+            'month',
+            $prevMonth
+        )
             ->where('year', $prevYear)
             ->get()
             ->keyBy('employee_id');
 
         $existing = Salary::where(
-                'month',
-                $month
-            )
+            'month',
+            $month
+        )
             ->where('year', $year)
             ->pluck('employee_id')
             ->toArray();
@@ -176,7 +176,7 @@ class AccountantSalaryService
             return [
                 'success' => false,
                 'message' =>
-                    'Bảng lương tháng này đã được tạo rồi',
+                'Bảng lương tháng này đã được tạo rồi',
                 'code' => 400
             ];
         }
@@ -197,21 +197,20 @@ class AccountantSalaryService
                 'year' => $year,
 
                 'base_salary' =>
-                    $prev->base_salary ?? 0,
+                $prev->base_salary ?? 0,
 
                 'bonus' =>
-                    $prev->bonus ?? 0,
+                $prev->bonus ?? 0,
 
                 'tax' =>
-                    $prev->tax ?? 0,
+                $prev->tax ?? 0,
 
-                'total' =>
-                    ($prev->base_salary ?? 0)
+                'total' => ($prev->base_salary ?? 0)
                     + ($prev->bonus ?? 0)
                     - ($prev->tax ?? 0),
 
                 'note' =>
-                    $prev->note ?? '',
+                $prev->note ?? '',
 
                 'status' => 'draft',
 

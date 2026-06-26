@@ -79,7 +79,9 @@
                         <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th>Nhân viên</th>
+                                    <th>Mã NV</th>
+                                    <th>Tên NV</th>
+                                    <th class="d-none d-lg-table-cell">Phòng ban</th>
                                     <th>Tổng lương</th>
                                     <th class="d-none d-md-table-cell">Tháng/Năm</th>
                                     <th>Trạng thái</th>
@@ -90,8 +92,10 @@
 
                             <tbody>
                                 <tr v-for="s in salaries" :key="s.id">
-                                    <td class="text-nowrap">{{ s.user_name }}</td>
-                                    <td>{{ s.total }}</td>
+                                    <td class="text-nowrap">{{ s.employee_code }}</td>
+                                    <td>{{ s.user_name }}</td>
+                                    <td class="d-none d-lg-table-cell">{{ s.department }}</td>
+                                    <td>{{ formatMoney(s.total) }}</td>
                                     <td class="d-none d-md-table-cell">{{ s.month }} / {{ s.year }}</td>
                                     <td>
                                         <span v-if="s.status === 'draft'" class="badge bg-secondary">
@@ -211,8 +215,15 @@ const showSidebar = ref(false)
 const showModal = ref(false)
 
 const salaries = ref([])
-const month = ref(4)
-const year = ref(2026)
+
+const formatMoney = (value) => {
+    return Number(value).toLocaleString('vi-VN') + ' VNĐ'
+}
+
+const now = new Date()
+
+const month = ref(now.getMonth() + 1)
+const year = ref(now.getFullYear())
 
 const search = ref('')
 const status = ref('')

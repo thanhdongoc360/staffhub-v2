@@ -15,6 +15,7 @@ class PerformanceService
         $perPage = isset($filters['per_page']) ? (int) $filters['per_page'] : 10;
 
         $query = Employee::query();
+        $department = null;
 
         if ($user->role === 'management') {
 
@@ -28,23 +29,23 @@ class PerformanceService
                 ];
             }
 
-            $query->where(
-                'department',
-                $employee->department
-            );
+            $department = $employee->department;
+
+            $query->where('department', $department);
         }
 
-        $paginator = $query
-            ->when($search, function ($q) use ($search) {
-                $q->where('employee_code', 'like', "%$search%")
+        if ($search) {
+            $query->where(function ($sub) use ($search) {
+                $sub->where('employee_code', 'like', "%$search%")
                     ->orWhereHas('user', function ($q2) use ($search) {
                         $q2->where('name', 'like', "%$search%");
                     });
-            })
-            ->whereHas('performanceReviews', function ($q) use ($month, $year) {
-                $q->where('period_month', $month)
-                    ->where('period_year', $year);
-            })
+            });
+        }
+
+        $summaryQuery = clone $query;
+
+        $paginator = $query
             ->with([
                 'user',
                 'performanceReviews' => function ($q) use ($month, $year) {
@@ -57,24 +58,70 @@ class PerformanceService
 
         $paginator->getCollection()->transform(function ($emp) {
 
-                $review = $emp->performanceReviews->first();
+            $review = $emp->performanceReviews->first();
 
-                return [
-                    'id' => $emp->id,
-                    'name' => $emp->user->name ?? null,
-                    'code' => $emp->employee_code,
-                    'position' => $emp->position,
+            return [
+                'id' => $emp->id,
+                'name' => $emp->user->name ?? null,
+                'code' => $emp->employee_code,
+                'position' => $emp->position,
 
-                    'review_id' => $review->id ?? null,
-                    'status' => $review->status ?? 'not_reviewed',
-                    'total_score' => $review->total_score ?? null,
-                    'rank' => $review->rank ?? null,
-                ];
-            });
+                'review_id' => $review->id ?? null,
+                'status' => ($review && $review->total_score !== null) ? 'reviewed' : 'not_reviewed',
+                'total_score' => $review->total_score ?? null,
+                'rank' => $review->rank ?? null,
+            ];
+        });
+
+        $employees = $summaryQuery
+            ->with([
+                'performanceReviews' => function ($q) use ($month, $year) {
+                    $q->where('period_month', $month)
+                        ->where('period_year', $year);
+                }
+            ])
+            ->get();
+
+        $total = $employees->count();
+
+        $reviewedEmployees = $employees->filter(function ($emp) {
+            $review = $emp->performanceReviews->first();
+
+            return $review && $review->total_score !== null;
+        });
+
+        $reviewed = $reviewedEmployees->count();
+
+        $notReviewed = $total - $reviewed;
+
+        $avgScore = $reviewedEmployees->avg(function ($emp) {
+            return $emp->performanceReviews->first()?->total_score ?? 0;
+        }) ?? 0;
+
+        $aCount = $reviewedEmployees->filter(function ($emp) {
+            return $emp->performanceReviews->first()?->rank === 'A';
+        })->count();
+
+        $aRate = $reviewed > 0
+            ? round(($aCount / $reviewed) * 100, 1)
+            : 0;
 
         return [
             'success' => true,
-            'data' => $paginator
+            'data' => [
+                'items' => $paginator->items(),
+                'current_page' => $paginator->currentPage(),
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'department' => $department,
+
+                'summary' => [
+                    'reviewed' => $reviewed,
+                    'not_reviewed' => $notReviewed,
+                    'avg_score' => round($avgScore, 1),
+                    'a_rate' => $aRate
+                ]
+            ]
         ];
     }
 
@@ -108,9 +155,9 @@ class PerformanceService
         $employee = $query->firstOrFail();
 
         $review = PerformanceReview::where(
-                'employee_id',
-                $employeeId
-            )
+            'employee_id',
+            $employeeId
+        )
             ->where('period_month', $month)
             ->where('period_year', $year)
             ->first();
@@ -122,7 +169,7 @@ class PerformanceService
                 'reviewer_id' => $user->id,
                 'period_month' => $month,
                 'period_year' => $year,
-                'status' => 'draft',
+                'status' => 'not_reviewed',
             ]);
         }
 
@@ -136,7 +183,7 @@ class PerformanceService
                     'position' => $employee->position,
                     'department' => $employee->department,
                 ],
-                'review' => [
+                'review' => $review ? [
                     'id' => $review->id,
                     'kpi_score' => $review->kpi_score ?? 0,
                     'discipline_score' => $review->discipline_score ?? 0,
@@ -146,7 +193,7 @@ class PerformanceService
                     'total_score' => $review->total_score,
                     'rank' => $review->rank,
                     'status' => $review->status,
-                ]
+                ] : null
             ]
         ];
     }
@@ -186,7 +233,7 @@ class PerformanceService
                 'collaboration_comment' => $data['collaboration_comment'] ?? null,
                 'reviewer_comment' => $data['reviewer_comment'] ?? null,
 
-                'status' => $data['status'] ?? 'draft',
+                'status' => 'reviewed',
             ]
         );
 
@@ -196,35 +243,35 @@ class PerformanceService
         ];
     }
 
-    public function confirmReview($user, int $id)
-    {
-        if ($user->role_id !== 3) {
-            return [
-                'success' => false,
-                'message' => 'Forbidden',
-                'code' => 403
-            ];
-        }
+    // public function confirmReview($user, int $id)
+    // {
+    //     if ($user->role_id !== 3) {
+    //         return [
+    //             'success' => false,
+    //             'message' => 'Forbidden',
+    //             'code' => 403
+    //         ];
+    //     }
 
-        $review = PerformanceReview::findOrFail($id);
+    //     $review = PerformanceReview::findOrFail($id);
 
-        if ($review->status !== 'submitted') {
-            return [
-                'success' => false,
-                'message' => 'Chỉ confirm khi đã submitted',
-                'code' => 400
-            ];
-        }
+    //     if ($review->status !== 'submitted') {
+    //         return [
+    //             'success' => false,
+    //             'message' => 'Chỉ confirm khi đã submitted',
+    //             'code' => 400
+    //         ];
+    //     }
 
-        $review->update([
-            'status' => 'confirmed'
-        ]);
+    //     $review->update([
+    //         'status' => 'confirmed'
+    //     ]);
 
-        return [
-            'success' => true,
-            'data' => $review
-        ];
-    }
+    //     return [
+    //         'success' => true,
+    //         'data' => $review
+    //     ];
+    // }
 
     public function getHistory($user, int $employeeId)
     {
@@ -235,9 +282,9 @@ class PerformanceService
             ->firstOrFail();
 
         return PerformanceReview::where(
-                'employee_id',
-                $employeeId
-            )
+            'employee_id',
+            $employeeId
+        )
             ->orderByDesc('period_year')
             ->orderByDesc('period_month')
             ->take(6)

@@ -49,6 +49,8 @@
                                     <option value="present">Đi làm</option>
                                     <option value="late">Đi muộn</option>
                                     <option value="half_day">Nửa ngày</option>
+                                    <option value="pending">Chưa hoàn tất</option>
+                                    <option value="absent">Vắng mặt</option>
                                 </select>
                             </div>
 
@@ -113,9 +115,11 @@
                         <div class="mb-2">
                             <label>Trạng thái</label>
                             <select v-model="form.status" class="form-select">
-                                <option value="present">Present</option>
-                                <option value="late">Late</option>
-                                <option value="half_day">Half day</option>
+                                <option value="present">Đi làm</option>
+                                <option value="late">Đi muộn</option>
+                                <option value="half_day">Nửa ngày</option>
+                                <option value="absent">Vắng mặt</option>
+                                <option value="pending">Chưa hoàn tất</option>
                             </select>
                         </div>
 
@@ -150,6 +154,8 @@ const statusClass = (status) => {
     if (status === 'late') return 'status-late'
     if (status === 'half_day') return 'status-half-day'
     if (status === 'absent') return 'status-absent'
+    if (status === 'pending') return 'status-pending'
+
     return 'status-default'
 }
 
@@ -158,6 +164,8 @@ const statusText = (status) => {
     if (status === 'late') return 'Đi muộn'
     if (status === 'half_day') return 'Nửa ngày'
     if (status === 'absent') return 'Vắng mặt'
+    if (status === 'pending') return 'Chưa hoàn tất'
+
     return status || 'Không xác định'
 }
 
@@ -208,6 +216,16 @@ onMounted(fetchData)
     flex: 0 1 150px;
 }
 
+.status-absent {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.status-pending {
+    color: #6c757d;
+    font-weight: 600;
+}
+
 .status-present {
     color: #198754;
     font-weight: 600;
@@ -229,6 +247,7 @@ onMounted(fetchData)
 }
 
 @media (max-width: 576px) {
+
     .filter-item,
     .filter-item-search,
     .filter-item-sm,

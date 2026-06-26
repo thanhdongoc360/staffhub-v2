@@ -16,8 +16,12 @@
                 </div>
 
                 <div class="col-12 col-lg-9">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
-                        <h1 class="mb-0">Hiệu suất phòng ban</h1>
+                    <div
+                        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mt-3 gap-2">
+                        <h1 class="mb-0">
+                            Hiệu suất phòng ban:
+                            <span class="text-primary">{{ department }}</span>
+                        </h1>
                     </div>
 
                     <div class="mt-3 filter-panel">
@@ -68,12 +72,12 @@
                                     <th>Hành động</th>
                                 </tr>
                             </thead>
- 
+
                             <tbody>
                                 <tr v-for="item in list" :key="item.id">
                                     <td class="text-nowrap">{{ item.code }}</td>
                                     <td class="d-none d-lg-table-cell">{{ item.name }}</td>
-                                    <td class="d-none d-md-table-cell">{{ item.position }}</td>
+                                    <td class="d-none d-lg-table-cell">{{ item.position }}</td>
                                     <td>
                                         <span :class="statusClass(item.status)">
                                             {{ statusText(item.status) }}
@@ -103,8 +107,8 @@
             </div>
         </div>
 
-        <a-modal :open="showModal" @update:open="showModal = $event" title="Chi tiết đánh giá" width="800px" @cancel="showModal = false"
-            :footer="null" @ok="saveReview">
+        <a-modal :open="showModal" @update:open="showModal = $event" title="Chi tiết đánh giá" width="800px"
+            @cancel="showModal = false" :footer="null" @ok="saveReview">
             <div v-if="detail">
                 <h3>{{ detail.employee.name }}</h3>
                 <p>Mã NV: {{ detail.employee.code }}</p>
@@ -114,23 +118,28 @@
 
                 <a-form layout="vertical">
                     <a-form-item label="KPI Score">
-                        <a-input-number :value="detail.review.kpi_score" @update:value="(value) => detail.review.kpi_score = value" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.kpi_score"
+                            @update:value="(value) => detail.review.kpi_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Discipline Score">
-                        <a-input-number :value="detail.review.discipline_score" @update:value="(value) => detail.review.discipline_score = value" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.discipline_score"
+                            @update:value="(value) => detail.review.discipline_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Collaboration Score">
-                        <a-input-number :value="detail.review.collaboration_score" @update:value="(value) => detail.review.collaboration_score = value" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.collaboration_score"
+                            @update:value="(value) => detail.review.collaboration_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Growth Score">
-                        <a-input-number :value="detail.review.growth_score" @update:value="(value) => detail.review.growth_score = value" :min="0" :max="100" />
+                        <a-input-number :value="detail.review.growth_score"
+                            @update:value="(value) => detail.review.growth_score = value" :min="0" :max="100" />
                     </a-form-item>
 
                     <a-form-item label="Reviewer Comment">
-                        <a-textarea :value="detail.review.reviewer_comment" @update:value="(value) => detail.review.reviewer_comment = value" />
+                        <a-textarea :value="detail.review.reviewer_comment"
+                            @update:value="(value) => detail.review.reviewer_comment = value" />
                     </a-form-item>
                 </a-form>
 
@@ -144,12 +153,8 @@
                         Đóng
                     </a-button>
 
-                    <a-button v-if="detail.review.status === 'draft'" type="primary" class="d-block d-sm-inline-block" @click="submitReview">
-                        Submit
-                    </a-button>
-
-                    <a-button v-if="detail.review.status === 'submitted'" type="primary" class="d-block d-sm-inline-block" @click="confirmReview">
-                        Confirm
+                    <a-button type="primary" class="d-block d-sm-inline-block" @click="saveReview">
+                        Lưu đánh giá
                     </a-button>
                 </div>
             </div>
@@ -175,6 +180,8 @@ const selectedEmployeeId = ref(null)
 
 const showSidebar = ref(false)
 
+const department = ref('')
+
 const detail = ref(null)
 
 const fetchData = async () => {
@@ -188,7 +195,9 @@ const fetchData = async () => {
         })
 
         const payload = response.data ?? {}
-        list.value = payload.data ?? []
+
+        list.value = payload.items ?? []
+        department.value = payload.department ?? ''
     } catch (error) {
         console.log('Fetch performance error: ', error)
     }
@@ -197,12 +206,10 @@ const fetchData = async () => {
 const kpiCards = computed(() => {
     const total = list.value.length
 
-    const reviewed = list.value.filter(i => i.status === 'submitted' || i.status === 'confirmed').length
+    const reviewed = list.value.filter(i => i.status === 'reviewed').length
     const notReviewed = total - reviewed
 
-    const reviewedList = list.value.filter(
-        i => i.status === 'submitted' || i.status === 'confirmed'
-    )
+    const reviewedList = list.value.filter(i => i.status === 'reviewed')
 
     const avg = reviewedList.reduce(
         (sum, i) => sum + (i.total_score || 0),
@@ -221,11 +228,7 @@ const kpiCards = computed(() => {
 
 const statusClass = (status) => {
     switch (status) {
-        case 'draft':
-            return 'text-primary'
-        case 'submitted':
-            return 'text-warning'
-        case 'confirmed':
+        case 'reviewed':
             return 'text-success'
         default:
             return 'text-secondary'
@@ -234,12 +237,8 @@ const statusClass = (status) => {
 
 const statusText = (status) => {
     switch (status) {
-        case 'draft':
-            return 'Bản nháp'
-        case 'submitted':
-            return 'Đã gửi'
-        case 'confirmed':
-            return 'Đã duyệt'
+        case 'reviewed':
+            return 'Đã đánh giá'
         case 'not_reviewed':
             return 'Chưa đánh giá'
         default:
@@ -292,38 +291,6 @@ const saveReview = async () => {
     }
 }
 
-const confirmReview = async () => {
-    try {
-        await http.put(`/management/performance/${detail.value.review.id}/confirm`)
-
-        showModal.value = false
-        await fetchData()
-
-        detail.value = null
-    } catch (error) {
-        console.log('Confirm error:', error)
-    }
-}
-
-const submitReview = async () => {
-    try {
-        await http.post('/management/performance', {
-            ...detail.value.review,
-            employee_id: detail.value.employee.id,
-            month: month.value,
-            year: year.value,
-            status: 'submitted'
-        })
-
-        showModal.value = false
-        await fetchData()
-
-        detail.value = null
-    } catch(error) {
-        console.log('Submit error:', error)
-    }
-}
-
 onMounted(() => {
     fetchData()
 })
@@ -349,6 +316,7 @@ onMounted(() => {
 }
 
 @media (max-width: 576px) {
+
     .filter-item,
     .filter-item-search,
     .filter-item-sm,

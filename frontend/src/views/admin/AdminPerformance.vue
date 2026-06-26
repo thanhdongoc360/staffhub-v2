@@ -74,7 +74,11 @@
                                         <td>{{ item.code }}</td>
                                         <td>{{ item.name }}</td>
                                         <td>{{ item.position }}</td>
-                                        <td>{{ statusText(item.status) }}</td>
+                                        <td>
+                                            <span :class="statusClass(item.status)">
+                                                {{ statusText(item.status) }}
+                                            </span>
+                                        </td>
                                         <td>{{ item.total_score ?? '-' }}</td>
                                         <td>{{ item.rank ?? '-' }}</td>
 
@@ -95,13 +99,8 @@
                         </div>
 
                         <div class="d-flex justify-content-center mt-4">
-                            <a-pagination
-                                :current="currentPage"
-                                :total="totalItems"
-                                :page-size="perPage"
-                                @change="onPageChange"
-                                show-less-items
-                            />
+                            <a-pagination :current="currentPage" :total="totalItems" :page-size="perPage"
+                                @change="onPageChange" show-less-items />
                         </div>
                     </div>
                 </div>
@@ -109,7 +108,8 @@
         </div>
 
         <!-- MODAL -->
-        <a-modal :open="showModal" @update:open="showModal = $event" title="Chi tiết đánh giá" width="600px" :footer="null">
+        <a-modal :open="showModal" @update:open="showModal = $event" title="Chi tiết đánh giá" width="600px"
+            :footer="null">
             <div v-if="detail">
                 <h3>{{ detail.employee.name }}</h3>
                 <p>Mã NV: {{ detail.employee.code }}</p>
@@ -117,17 +117,23 @@
 
                 <hr />
 
-                <p>KPI: {{ detail.review?.kpi_score ?? '-' }}</p>
-                <p>Discipline: {{ detail.review?.discipline_score ?? '-' }}</p>
-                <p>Collaboration: {{ detail.review?.collaboration_score ?? '-' }}</p>
-                <p>Growth: {{ detail.review?.growth_score ?? '-' }}</p>
+                <template v-if="detail.review">
+                    <p>KPI: {{ detail.review.kpi_score ?? '-' }}</p>
+                    <p>Discipline: {{ detail.review.discipline_score ?? '-' }}</p>
+                    <p>Collaboration: {{ detail.review.collaboration_score ?? '-' }}</p>
+                    <p>Growth: {{ detail.review.growth_score ?? '-' }}</p>
 
-                <p>Comment: {{ detail.review?.reviewer_comment ?? '-' }}</p>
+                    <p>Comment: {{ detail.review.reviewer_comment ?? '-' }}</p>
 
-                <hr />
+                    <hr />
 
-                <b>Score:</b> {{ detail.review?.total_score ?? '-' }} |
-                <b>Rank:</b> {{ detail.review?.rank ?? '-' }}
+                    <b>Score:</b> {{ detail.review.total_score ?? '-' }} |
+                    <b>Rank:</b> {{ detail.review.rank ?? '-' }}
+                </template>
+
+                <p v-else class="text-muted">
+                    Nhân viên này chưa có đánh giá trong tháng đã chọn.
+                </p>
             </div>
         </a-modal>
     </div>
@@ -136,7 +142,7 @@
 
 <script setup>
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import http from "../../services/http";
 
 const list = ref([])
@@ -150,6 +156,13 @@ const year = ref(new Date().getFullYear())
 const showModal = ref(false)
 const detail = ref(null)
 
+const summary = ref({
+    reviewed: 0,
+    not_reviewed: 0,
+    avg_score: 0,
+    a_rate: 0
+})
+
 const fetchData = async (page = 1) => {
     const res = await http.get('/admin/performance', {
         params: {
@@ -161,7 +174,14 @@ const fetchData = async (page = 1) => {
         }
     })
 
-    list.value = res.data.data ?? []
+    list.value = res.data.items ?? []
+    summary.value = res.data.summary ?? {
+        reviewed: 0,
+        not_reviewed: 0,
+        avg_score: 0,
+        a_rate: 0
+    }
+
     totalItems.value = res.data.total ?? 0
     currentPage.value = res.data.current_page ?? page
 }
@@ -175,35 +195,25 @@ watch([month, year], () => {
     handleSearch()
 })
 
-import { computed } from 'vue'
+const kpiCards = computed(() => [
+    {
+        label: 'Đã đánh giá',
+        value: summary.value.reviewed
+    },
+    {
+        label: 'Chưa đánh giá',
+        value: summary.value.not_reviewed
+    },
+    {
+        label: 'Điểm TB',
+        value: summary.value.avg_score
+    },
+    {
+        label: 'Tỷ lệ A',
+        value: summary.value.a_rate + '%'
+    }
+])
 
-const kpiCards = computed(() => {
-    const total = list.value.length
-
-    const reviewed = list.value.filter(
-        i => i.status === 'submitted' || i.status === 'confirmed'
-    ).length
-
-    const notReviewed = total - reviewed
-
-    const reviewedList = list.value.filter(
-        i => i.status === 'submitted' || i.status === 'confirmed'
-    )
-
-    const avg = reviewedList.reduce(
-        (sum, i) => sum + (i.total_score || 0),
-        0
-    ) / (reviewedList.length || 1)
-
-    const aRate = reviewedList.filter(i => i.rank === 'A').length / (reviewedList.length || 1)
-
-    return [
-        { label: 'Đã đánh giá', value: reviewed },
-        { label: 'Chưa đánh giá', value: notReviewed },
-        { label: 'Điểm TB', value: avg.toFixed(1) },
-        { label: 'Tỷ lệ A', value: (aRate * 100).toFixed(0) + '%' },
-    ]
-})
 
 const openDetail = async (item) => {
     const res = await http.get(`/admin/performance/${item.id}`, {
@@ -231,6 +241,22 @@ const statusText = (status) => {
     }
 }
 
+const statusClass = (status) => {
+    switch (status) {
+        case 'draft':
+            return 'text-primary'
+
+        case 'submitted':
+            return 'text-warning'
+
+        case 'confirmed':
+            return 'text-success'
+
+        default:
+            return 'text-secondary'
+    }
+}
+
 onMounted(() => fetchData(1))
 </script>
 
@@ -253,6 +279,7 @@ onMounted(() => fetchData(1))
 }
 
 @media (max-width: 576px) {
+
     .filter-item,
     .filter-item-search,
     .filter-item-sm,

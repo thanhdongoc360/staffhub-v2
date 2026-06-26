@@ -13,8 +13,8 @@ class AttendanceController extends Controller
 
     public function checkIn()
     {
-        $result = $this->attendanceService
-            ->checkIn(auth()->user());
+        $result = $this->attendanceService  
+            ->checkIn(auth()->user());  
 
         // Nếu check-in không thành công, trả về lỗi với mã lỗi và thông báo
         if (!$result['success']) {
