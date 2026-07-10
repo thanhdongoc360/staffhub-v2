@@ -17,3 +17,4 @@ npm run dev
 
 3. Các bước deployee
 sửa cái .env của frontend thành Kết nối trực tiếp để deploy lên server
+cần npm run build 

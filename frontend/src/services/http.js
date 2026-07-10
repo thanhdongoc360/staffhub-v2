@@ -8,13 +8,20 @@ import axios from "axios";
 // Khi deploy lên server, VITE_API_BASE_URL sẽ là "https://api.thanh360.site/api"
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
-
+// Deploy lên server thì dùng URL tuyệt đối, còn khi chạy local thì dùng URL tương đối để tránh lỗi CORS
 const http = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "https://api.thanh360.site/api",
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+// const http = axios.create({
+//   baseURL: API_BASE_URL,
+//   headers: {
+//     "Content-Type": "application/json",
+//   },
+// });
 
 
 // Thêm token vào mỗi request
@@ -33,11 +40,3 @@ http.interceptors.request.use(
 
 export default http;
 
-
-// Deploy lên server thì dùng URL tuyệt đối, còn khi chạy local thì dùng URL tương đối để tránh lỗi CORS
-// const http = axios.create({
-//   baseURL: "https://api.thanh360.site/api",
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-// });
